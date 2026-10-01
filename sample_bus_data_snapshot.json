@@ -1,0 +1,602 @@
+[
+  {
+    "deviceId": "40317",
+    "regionId": 32,
+    "locationId": "630TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "4_Kummeli - Ringtee_B>A_6ad3abd398c0f65ad71ead756f430306|Talv_26/27-MoWeTh-ad7be154fae9ca223ff7c9fb38e7cf97-A-B--2015-a91d7ef",
+      "directionId": 0,
+      "routeShortName": "4",
+      "startTime": "20:15:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.22,
+      "bearing": 208.0,
+      "latitude": 58.389168,
+      "longitude": 26.72804,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38161",
+    "regionId": 32,
+    "locationId": "340TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "8_Kvissentali - Roopa_A>B_8c8cec5fc116387533682c779f6d87b0|Talv_26/27-MoWeTh-8516c6528db5d744a547729fe69668fc-A-OB-2012-5a4a2d9",
+      "directionId": 0,
+      "routeShortName": "8",
+      "startTime": "20:12:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 4.17,
+      "bearing": 202.0,
+      "latitude": 58.394314,
+      "longitude": 26.733463,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38179",
+    "regionId": 32,
+    "locationId": "427TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "1_FI - Nõlvaku_A>B_d86eb3309e210d01832e1d8abc0e39ca|Talv_26/27-MoWeTh-82f00cbb707de581e42b137af67c479f-A-A--2004-3d37933",
+      "directionId": 0,
+      "routeShortName": "1",
+      "startTime": "20:04:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.0,
+      "bearing": 132.0,
+      "latitude": 58.38037,
+      "longitude": 26.737875,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "39118",
+    "regionId": 32,
+    "locationId": "446TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "13_Kasteheina - Puidu_A>B_3c5112f76d477c52d068370241698db6|Talv_26/27-MoWeTh-dbc1a3729774a1558171052a7e5d8490-A-OB-2020-41cef44",
+      "directionId": 0,
+      "routeShortName": "13",
+      "startTime": "20:20:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.78,
+      "bearing": 27.0,
+      "latitude": 58.35408,
+      "longitude": 26.791737,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "39110",
+    "regionId": 32,
+    "locationId": "116BTK",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "3_Nõlvaku - Tartu Näitused_A>C_1e7001bdd783af60daf33a07486ddc19|Talv_26/27-MoWeTh-99ac18f3014c813da99ec92195e69748-B-OB-1955-a130d27",
+      "directionId": 0,
+      "routeShortName": "3",
+      "startTime": "19:55:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 1.67,
+      "bearing": 308.0,
+      "latitude": 58.38111,
+      "longitude": 26.704239,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38185",
+    "regionId": 32,
+    "locationId": "436TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "10_Kvissentali-Annelinn Ringtee-Rdt.jaam_A>B_55f177c8720ef2d4390c5233db69d479|Talv_26/27-MoWeTh-ae613439c9ac436afef59857fcdabebf-A-OB-1935-379a132",
+      "directionId": 0,
+      "routeShortName": "10",
+      "startTime": "19:35:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 1.39,
+      "bearing": 153.0,
+      "latitude": 58.383827,
+      "longitude": 26.69116,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38146",
+    "regionId": 32,
+    "locationId": "425TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "2_Nõlvaku - Kannikese - Lõunakeskus_B>A_e68c0a506df02abaa60a5120766ecac4|Talv_26/27-MoWeTh-3ef88e812ba19553a78abfe309c76563-A-B--1955-750e8e0",
+      "directionId": 0,
+      "routeShortName": "2",
+      "startTime": "19:55:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.78,
+      "bearing": 292.0,
+      "latitude": 58.377495,
+      "longitude": 26.687183,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38169",
+    "regionId": 32,
+    "locationId": "485TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "7_Kõrveküla - Raeplats - Tõrvandi_B1>A_9934a566ad8eb3cb3a2b935a901d1e20|Talv_26/27-MoWeTh-3f4ed538859451408434b050dbfda339-Variant_-_A-B--2000-e983977",
+      "directionId": 0,
+      "routeShortName": "7",
+      "startTime": "20:00:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 1.94,
+      "bearing": 159.0,
+      "latitude": 58.380547,
+      "longitude": 26.725056,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38154",
+    "regionId": 32,
+    "locationId": "323TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "10_Rdt.jaam-Ringtee Annelinn-Kvissentali_B>A_4a80f394e7e6050f367f5c4480f72db5|Talv_26/27-MoWeTh-ae613439c9ac436afef59857fcdabebf-A-IB-1940-dbbc3f4",
+      "directionId": 0,
+      "routeShortName": "10",
+      "startTime": "19:40:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 1.67,
+      "bearing": 288.0,
+      "latitude": 58.380867,
+      "longitude": 26.754942,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "39115",
+    "regionId": 32,
+    "locationId": "719VVK",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "7_Tõrvandi - Raeplats - Kõrveküla_A>B1_1d870814a377ffc8bed1d78c28b07a9e|Talv_26/27-MoWeTh-3f4ed538859451408434b050dbfda339-Variant_-_A-A--1932-17ea59c",
+      "directionId": 0,
+      "routeShortName": "7",
+      "startTime": "19:32:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.0,
+      "bearing": 278.0,
+      "latitude": 58.423992,
+      "longitude": 26.765524,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "37905",
+    "regionId": 32,
+    "locationId": "474TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "2_Nõlvaku - Kannikese - Lõunakeskus_B>A_e68c0a506df02abaa60a5120766ecac4|Talv_26/27-MoWeTh-3ef88e812ba19553a78abfe309c76563-A-B--2015-26a192c",
+      "directionId": 0,
+      "routeShortName": "2",
+      "startTime": "20:15:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 1.94,
+      "bearing": 20.0,
+      "latitude": 58.376488,
+      "longitude": 26.770798,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38158",
+    "regionId": 32,
+    "locationId": "430TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "12_Lõunakeskus - Kasteheina_A>B_4506d279b3676880e8f82c8e9d6965f1|Talv_26/27-MoWeTh-24c4971d9b648771df5bd2c4babd9ab5-A-IB-2013-0b83e78",
+      "directionId": 0,
+      "routeShortName": "12",
+      "startTime": "20:13:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.5,
+      "bearing": 165.0,
+      "latitude": 58.370213,
+      "longitude": 26.697754,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38176",
+    "regionId": 32,
+    "locationId": "404TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "1_Nõlvaku - FI_B>A_6aa1fddb78e8c290a4a8f8be986db214|Talv_26/27-MoWeTh-82f00cbb707de581e42b137af67c479f-A-B--2010-38321ae",
+      "directionId": 0,
+      "routeShortName": "1",
+      "startTime": "20:10:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 1.11,
+      "bearing": 320.0,
+      "latitude": 58.38274,
+      "longitude": 26.734251,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38046",
+    "regionId": 32,
+    "locationId": "465TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "9_Karlova Annelinn Raadi Vahi tp_A>B1_1735508980bcd79e1d1c0316435fc1d0|Talv_26/27-MoWeTh-1dde0e81dd0007b4048bd3389297e33a-B-A--2000-fae5336",
+      "directionId": 0,
+      "routeShortName": "9",
+      "startTime": "20:00:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 3.06,
+      "bearing": 28.0,
+      "latitude": 58.373207,
+      "longitude": 26.767895,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "40242",
+    "regionId": 32,
+    "locationId": "416TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "2_Lõunakeskus - Kannikese - Nõlvaku_A>B_181eba4dc8a8e6c8166013838bd50108|Talv_26/27-MoWeTh-3ef88e812ba19553a78abfe309c76563-A-A--2005-8847eb4",
+      "directionId": 0,
+      "routeShortName": "2",
+      "startTime": "20:05:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.5,
+      "bearing": 53.0,
+      "latitude": 58.37012,
+      "longitude": 26.71328,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "39120",
+    "regionId": 32,
+    "locationId": "345TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "7_Tõrvandi - Raeplats - Kõrveküla_A>B1_1d870814a377ffc8bed1d78c28b07a9e|Talv_26/27-MoWeTh-3f4ed538859451408434b050dbfda339-Variant_-_A-A--2002-3e727dc",
+      "directionId": 0,
+      "routeShortName": "7",
+      "startTime": "20:02:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.83,
+      "bearing": 296.0,
+      "latitude": 58.37758,
+      "longitude": 26.730034,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38156",
+    "regionId": 32,
+    "locationId": "462TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "3_Tartu Näitused - Nõlvaku_C>A_4db8c9fb3b1c5578519bccff5cbbbf6d|Talv_26/27-MoWeTh-99ac18f3014c813da99ec92195e69748-B-IB-1955-d37714f",
+      "directionId": 0,
+      "routeShortName": "3",
+      "startTime": "19:55:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.56,
+      "bearing": 106.0,
+      "latitude": 58.380745,
+      "longitude": 26.755014,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38144",
+    "regionId": 32,
+    "locationId": "433TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "3_Tartu Näitused - Nõlvaku_C>A_4db8c9fb3b1c5578519bccff5cbbbf6d|Talv_26/27-MoWeTh-99ac18f3014c813da99ec92195e69748-B-IB-2020-277a79a",
+      "directionId": 0,
+      "routeShortName": "3",
+      "startTime": "20:20:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.5,
+      "bearing": 226.0,
+      "latitude": 58.386246,
+      "longitude": 26.69492,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38182",
+    "regionId": 32,
+    "locationId": "405TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "2_Lõunakeskus - Kannikese - Nõlvaku_A>B_181eba4dc8a8e6c8166013838bd50108|Talv_26/27-MoWeTh-3ef88e812ba19553a78abfe309c76563-A-A--1945-0ff892a",
+      "directionId": 0,
+      "routeShortName": "2",
+      "startTime": "19:45:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.22,
+      "bearing": 163.0,
+      "latitude": 58.369713,
+      "longitude": 26.767376,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38166",
+    "regionId": 32,
+    "locationId": "403TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "10_Rdt.jaam-Ringtee Annelinn-Kvissentali_B>A_4a80f394e7e6050f367f5c4480f72db5|Talv_26/27-MoWeTh-ae613439c9ac436afef59857fcdabebf-A-IB-2010-e02cdee",
+      "directionId": 0,
+      "routeShortName": "10",
+      "startTime": "20:10:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.0,
+      "bearing": 54.0,
+      "latitude": 58.37108,
+      "longitude": 26.715673,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "29357",
+    "regionId": 32,
+    "locationId": "717HVN",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "4_Ringtee - Kummeli_A>B_9bc19b320400990ca83e38f5752fd220|Talv_26/27-MoWeTh-ad7be154fae9ca223ff7c9fb38e7cf97-A-A--2000-4631a6e",
+      "directionId": 0,
+      "routeShortName": "4",
+      "startTime": "20:00:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.78,
+      "bearing": 304.0,
+      "latitude": 58.390793,
+      "longitude": 26.722675,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "39114",
+    "regionId": 32,
+    "locationId": "456TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "3_Nõlvaku - Tartu Näitused_A>C_1e7001bdd783af60daf33a07486ddc19|Talv_26/27-MoWeTh-99ac18f3014c813da99ec92195e69748-B-OB-2015-6eabf2e",
+      "directionId": 0,
+      "routeShortName": "3",
+      "startTime": "20:15:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.0,
+      "bearing": 288.0,
+      "latitude": 58.380913,
+      "longitude": 26.754492,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "39112",
+    "regionId": 32,
+    "locationId": "384TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "12_Kasteheina - Haigla - Lõunakeskus_B>A_034ceea484adf191d6b4707660782f67|Talv_26/27-MoWeTh-24c4971d9b648771df5bd2c4babd9ab5-A-OB-2010-6b860e1",
+      "directionId": 0,
+      "routeShortName": "12",
+      "startTime": "20:10:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.78,
+      "bearing": 302.0,
+      "latitude": 58.374207,
+      "longitude": 26.750893,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38160",
+    "regionId": 32,
+    "locationId": "382TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "8_Roopa - Kvissentali_B>A_5ef2e27264141b403757200865da4e7c|Talv_26/27-MoWeTh-8516c6528db5d744a547729fe69668fc-A-IB-1925-808c4e9",
+      "directionId": 0,
+      "routeShortName": "8",
+      "startTime": "19:25:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.0,
+      "bearing": 190.0,
+      "latitude": 58.406807,
+      "longitude": 26.710226,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38171",
+    "regionId": 32,
+    "locationId": "352TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "9_Vahi tp Raadi Annelinn Karlova_B1>A_93a06da56528a8ca384147e8b0873276|Talv_26/27-MoWeTh-1dde0e81dd0007b4048bd3389297e33a-B-B--1956-0debc90",
+      "directionId": 0,
+      "routeShortName": "9",
+      "startTime": "19:56:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.83,
+      "bearing": 304.0,
+      "latitude": 58.373306,
+      "longitude": 26.75387,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38159",
+    "regionId": 32,
+    "locationId": "488TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "8_Roopa - Kvissentali_B>A_5ef2e27264141b403757200865da4e7c|Talv_26/27-MoWeTh-8516c6528db5d744a547729fe69668fc-A-IB-1955-0d6536d",
+      "directionId": 0,
+      "routeShortName": "8",
+      "startTime": "19:55:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 2.22,
+      "bearing": 292.0,
+      "latitude": 58.401634,
+      "longitude": 26.723341,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38186",
+    "regionId": 32,
+    "locationId": "437TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "13_Puidu - Kasteheina_B>A_dd47ea14778fb6605c1bff6f3d20136e|Talv_26/27-MoWeTh-dbc1a3729774a1558171052a7e5d8490-A-IB-2010-879e3bf",
+      "directionId": 0,
+      "routeShortName": "13",
+      "startTime": "20:10:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 1.94,
+      "bearing": 171.0,
+      "latitude": 58.38278,
+      "longitude": 26.72385,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "39111",
+    "regionId": 32,
+    "locationId": "393TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "11_Kasteheina - Lõunakeskus - Märja_B>A_f3967402814f7b355a677177131c2f05|Talv_26/27-MoWeTh-0e3de04a1df6babfaeff75ebab18bcc3-A-A--1955-0b1aee9",
+      "directionId": 0,
+      "routeShortName": "11",
+      "startTime": "19:55:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.0,
+      "bearing": 54.0,
+      "latitude": 58.37152,
+      "longitude": 26.716272,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "38151",
+    "regionId": 32,
+    "locationId": "414TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "11_Märja - Lõunakeskus - Kasteheina_A>B_cb3371dc277dd0b6d90d5d44aac468cd|Talv_26/27-MoWeTh-0e3de04a1df6babfaeff75ebab18bcc3-A-B--1950-85e60b2",
+      "directionId": 0,
+      "routeShortName": "11",
+      "startTime": "19:50:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 0.0,
+      "bearing": 102.0,
+      "latitude": 58.372066,
+      "longitude": 26.75974,
+      "occupancyStatus": null
+    }
+  },
+  {
+    "deviceId": "42011",
+    "regionId": 32,
+    "locationId": "385TNS",
+    "updateTime": "2026-10-01T20:21:37+03:00",
+    "trip": {
+      "tripId": "13_Kasteheina - Puidu_A>B_3c5112f76d477c52d068370241698db6|Talv_26/27-MoWeTh-dbc1a3729774a1558171052a7e5d8490-A-OB-1944-c61e342",
+      "directionId": 0,
+      "routeShortName": "13",
+      "startTime": "19:44:00",
+      "startDate": "20261001"
+    },
+    "position": {
+      "speed": 3.33,
+      "bearing": 321.0,
+      "latitude": 58.382984,
+      "longitude": 26.682882,
+      "occupancyStatus": null
+    }
+  }
+]
