@@ -4,12 +4,14 @@
 
 #### Public Transport
 
-Bus movement and schedule data is queried from [tartu.pilet.ee](https://tartu.pilet.ee/et/explore?selectedTab=routes)and is used to describe:
+Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.pilet.ee/et/explore?selectedTab=routes) and is used to describe:
 
 * Bus locations and movements
 * Routes
 * Bus stops
 * Scheduled trips and times
+
+![img](bus_data_sources_diagram.png)
 
 #### Weather
 

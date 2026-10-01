@@ -151,7 +151,7 @@ Raw realtime observations of buses that is updated about every 5 seconds.
 
 ## 9. `STAGING_BUS_SCHEDULE`
 
-Raw scheduled trip and stop data.
+Raw scheduled trip and stop data, to get the stop times.
 
 | Variable | Type | Description |
 |---|---|---|
