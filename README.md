@@ -4,6 +4,7 @@ In the repository, there are following files:
 * Python-scripts for accessing [live bus data](https://github.com/merettearula1/data-engineering-team-13/blob/main/bus_live_data.py) and live weather data ([SIIA ON PYTHONI KOODI VAJA]())
 * [Description of the both datasets: live bus data and live weather data](https://github.com/merettearula1/data-engineering-team-13/blob/main/Datasets.md)
 * Sample data snapshots of [raw live bus data](https://github.com/merettearula1/data-engineering-team-13/blob/main/sample_bus_data_snapshot.json) and raw live weather data [SIIA ON SNAPSHOTI VAJA]().
+* [Star_Schema](https://github.com/merettearula1/data-engineering-team-13/blob/main/star_schema.png) and [demo SQL for Star Schema](https://github.com/merettearula1/data-engineering-team-13/blob/main/star_schema.sql).
 * [Data Dictionary](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md) of the star schema
 * [SQL Demo Queries](https://github.com/merettearula1/data-engineering-team-13/blob/main/Demo_queries.md) based on the project's Business Questions
 
