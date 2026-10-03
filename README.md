@@ -12,17 +12,18 @@ In the repository, there are following files:
 
 Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.pilet.ee/et/explore?selectedTab=routes) and is used to describe:
 
-* Bus locations and movements
-* Bus stops
-* Routes
-* Scheduled trips and times
+* Bus locations and movements ('Bus-live-data', 14 columns)
+* Bus stops ('Bus-stops', 5 columns)
+* Routes ('Bus-routes', 3 columns)
+* Scheduled trips ('Bus-route-trips', 5 columns)
+* Scheduled times ('Bus-schedule', 16 columns)
 
 ![img](bus_data_sources_diagram.png)
 
 
 ### Weather
 
-Weather observations are retrieved from [ilmateenistus.ee](https://www.ilmateenistus.ee/teenused/ilmainfo/eesti-vaatlusandmed-xml/). The project uses observations from the Tartu-Tõravere weather station.
+Weather observations are retrieved from [ilmateenistus.ee](https://www.ilmateenistus.ee/teenused/ilmainfo/eesti-vaatlusandmed-xml/). The project uses observations from the **Tartu-Tõravere weather station**.
 
 The data gets updated after every 10 or 60 minutes, depending on the measured parameter. There are total of 19 columns.
 
@@ -50,7 +51,7 @@ The data gets updated after every 10 or 60 minutes, depending on the measured pa
 
 
 ## Data Dictionary
-The project's Data Dictionary can be found [here](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md).
+The project's Data Dictionary for star schema can be found [here](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md).
 
 
 
