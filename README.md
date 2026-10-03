@@ -12,11 +12,11 @@ In the repository, there are following files:
 
 Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.pilet.ee/et/explore?selectedTab=routes) and is used to describe:
 
-* Bus locations and movements ('Bus-live-data', 14 columns)
-* Bus stops ('Bus-stops', 5 columns)
-* Routes ('Bus-routes', 3 columns)
-* Scheduled trips ('Bus-route-trips', 5 columns)
-* Scheduled times ('Bus-schedule', 16 columns)
+* Bus locations and movements (`Bus-live-data`, 14 columns)
+* Bus stops (`Bus-stops`, 5 columns)
+* Routes (`Bus-routes`, 3 columns)
+* Scheduled trips (`Bus-route-trips`, 5 columns)
+* Scheduled times (`Bus-schedule`, 16 columns)
 
 ![img](bus_data_sources_diagram.png)
 
