@@ -1,10 +1,10 @@
 # Tartu Transit Analytics using live bus data and live weather data
 
 In the repository, there are following files:
-* Python-scripts for accessing live bus data ([bus_live_data.py](https://github.com/merettearula1/data-engineering-team-13/blob/main/bus_live_data.py)) and live weather ([SIIA ON PYTHONI KOODI VAJA]())
-* Sample data snapshots of raw live bus data [sample_bys_data_snapshot.json](https://github.com/merettearula1/data-engineering-team-13/blob/main/sample_bus_data_snapshot.json) and raw live weather data [SIIA ON SNAPSHOTI VAJA]().
-* Data Dictionary of the star schema [Data_dictionary.md](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md)
-* SQL Demo Queries base don the project's Business Questions [Demo_queries.md](https://github.com/merettearula1/data-engineering-team-13/blob/main/Demo_queries.md)
+* Python-scripts for accessing [live bus data](https://github.com/merettearula1/data-engineering-team-13/blob/main/bus_live_data.py) and live weather ([SIIA ON PYTHONI KOODI VAJA]())
+* Sample data snapshots of [raw live bus data](https://github.com/merettearula1/data-engineering-team-13/blob/main/sample_bus_data_snapshot.json) and raw live weather data [SIIA ON SNAPSHOTI VAJA]().
+* [Data Dictionary](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md) of the star schema
+* [SQL Demo Queries](https://github.com/merettearula1/data-engineering-team-13/blob/main/Demo_queries.md) base don the project's Business Questions
 
 ## Data Sources
 
