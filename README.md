@@ -11,7 +11,7 @@ In the repository, there are following files:
 The full descriptions of the datasets can be found [here](https://github.com/merettearula1/data-engineering-team-13/blob/main/Datasets.md).
 
 ### How the live bus data is structured in the model?
-Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.pilet.ee/et/explore?selectedTab=routes) and is used to describe:
+Bus movement and schedule data is queried from [tartu.pilet.ee](https://tartu.pilet.ee/et/explore?selectedTab=routes) and is used to describe:
 
 * Bus locations and movements (`Bus-live-data`, 14 columns)
 * Bus stops (`Bus-stops`, 5 columns)
