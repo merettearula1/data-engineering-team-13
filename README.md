@@ -6,7 +6,7 @@ In the repository, there are following files:
 * Sample data snapshots of [raw live bus data](https://github.com/merettearula1/data-engineering-team-13/blob/main/sample_bus_data_snapshot.json) and raw live weather data [SIIA ON SNAPSHOTI VAJA]().
 * [Star_Schema](https://github.com/merettearula1/data-engineering-team-13/blob/main/star_schema.png) and [SQL Demo for Star Schema](https://github.com/merettearula1/data-engineering-team-13/blob/main/star_schema.sql).
 * [Data Dictionary](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md) of the star schema
-* [SQL Demo Queries](https://github.com/merettearula1/data-engineering-team-13/blob/main/Demo_queries.md) based on the project's Business Questions
+* [SQL Demo Queries](https://github.com/merettearula1/data-engineering-team-13/blob/main/Demo_queries.sql) based on the project's Business Questions
 
 ## Data Sources
 The full descriptions of the datasets can be found [here](https://github.com/merettearula1/data-engineering-team-13/blob/main/Datasets.md).
