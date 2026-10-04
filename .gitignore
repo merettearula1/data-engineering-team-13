@@ -3,3 +3,4 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 bus_data
+weather_data
