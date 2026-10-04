@@ -2,7 +2,26 @@
 
 Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.pilet.ee/et/explore?selectedTab=routes).
 
-## 1. Bus Stops Dataset (source for `/v1/stops`)
+## 1. Bus Live Data Dataset (source for [Realtime WebSocket](https://github.com/merettearula1/data-engineering-team-13/blob/main/bus_live_data.py))
+
+| Column | Description | Data Type | Sample Value |
+| :--- | :--- | :--- | :--- |
+| `deviceId` | Unique identifier of the bus device | String | `"38169"` |
+| `regionId` | Identifier of the region in which the bus operates | Integer | `32` |
+| `locationId` | Identifier of the bus's current location | String | `"485TNS"` |
+| `updateTime` | Timestamp of the latest bus position update | Timestamp | `"2026-10-01T20:21:37+03:00"` |
+| `tripId` | Unique identifier of the trip currently operated by the bus | String | `"7_Kõrveküla - Raeplats - Tõrvandi_B1>A_9934a566..."` |
+| `directionId` | Identifier of the trip direction | Integer | `0` |
+| `routeShortName` | Short name/number of the bus route | String | `"7"` |
+| `startTime` | Scheduled start time of the current trip | Time | `"20:00:00"` |
+| `startDate` | Scheduled start date of the current trip | Date | `"20261001"` |
+| `speed` | Current speed of the bus in metres per second | Float | `1.94` |
+| `bearing` | Current direction of travel in degrees | Float | `159.0` |
+| `latitude` | Current geographical latitude of the bus | Float | `58.380547` |
+| `longitude` | Current geographical longitude of the bus | Float | `26.725056` |
+| `occupancyStatus` | Current passenger occupancy status, if available | String / Null | `null` |
+
+## 2. Bus Stops Dataset (source for `/v1/stops`)
 
 | Column | Description | Data Type | Sample Value |
 | :--- | :--- | :--- | :--- |
@@ -16,7 +35,7 @@ Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.p
 | `desc` | Additional stop description or note | String / Null | `"null"` |
 
 
-## 2. Bus Routes in Tartu (source for `/v1/routes`)
+## 3. Bus Routes in Tartu (source for `/v1/routes`)
 
 | Column | Description | Data Type | Sample Value |
 | :--- | :--- | :--- | :--- |
@@ -29,7 +48,17 @@ Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.p
 | `icon.shape` | Icon shape design type (if specified) | String / Null | `null` |
 | `designation` | Additional route designation or label | String / Null | `null` |
 
-## 3. Upcoming Departures at a Specific Stop (source for `/v1/stops/{id}/stoptimes`)
+## 4. Bus Route Trips Dataset (source for `/v1/routes/{route_id}/trips`)
+
+| Column | Description | Data Type | Sample Value |
+| :--- | :--- | :--- | :--- |
+| `route_id` | Unique identifier of the bus route | String | `"1:10"` |
+| `trip_id` | Unique identifier of the scheduled trip | String | `"1:10:1234"` |
+| `trip_headsign` | Destination or direction displayed for the trip | String | `"Anne"` |
+| `service_id` | Identifier of the service schedule determining when the trip operates | String | `"1:1"` |
+| `shape_id` | Identifier of the geographic shape followed by the trip | String | `"1:10:0"` |
+
+## 5. Upcoming Departures at a Specific Stop (source for `/v1/stops/{id}/stoptimes`)
 
 ### `pattern` and `routeDetails` Object Fields
 
@@ -76,7 +105,7 @@ Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.p
 | `tripDirection` | Direction indicator for the trip (e.g., 0 or 1) | Integer / Null | `null` |
 
 
-## 4. Trip Stop Schedules (source for `/v1/trips/stoptimes?tripId={TRIP_ID}`)
+## 6. Trip Stop Schedules (source for `/v1/trips/stoptimes?tripId={TRIP_ID}`)
 
 | Column | Description | Data Type | Sample Value |
 | :--- | :--- | :--- | :--- |
