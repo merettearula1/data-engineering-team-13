@@ -253,3 +253,329 @@ FROM segment_delays
 
 -- Order by the segments that introduce the greatest amount of delay
 ORDER BY avg_delay_added_sec DESC;
+
+-- =====================================================================
+-- Q3: At what times of day are delays greatest? On which days are delays greatest?
+-- =====================================================================
+-- PART 1: Delays by hour of day
+--   - time_key = SCHEDULED arrival minute, so we group by when the bus was supposed to arrive.
+--   - Hour is the grouping level; time_of_day and is_peak_hour are attributes of the hour, shown as labels.
+-- ---------------------------------------------------------------------
+SELECT
+    t.hour,
+    t.time_of_day,
+    t.is_peak_hour,
+
+-- Total real-time stop arrivals observed in this hour
+    COUNT(*) AS total_stop_observations,
+
+-- AVERAGE DELAY: signed mean (early arrivals cancel out late ones)
+    ROUND(AVG(f.arrival_delay_sec), 2) AS avg_arrival_delay_sec,
+
+-- AVERAGE ABSOLUTE DEVIATION: how far from the timetable regardless of direction
+    ROUND(AVG(ABS(f.arrival_delay_sec)), 2) AS avg_abs_deviation_sec,
+
+-- LATE ARRIVAL FREQUENCY (%): arrivals > 3 min (180 s) late
+    ROUND(100.0 * COUNT(*) FILTER (WHERE f.arrival_delay_sec > 180) / COUNT(*), 2) AS late_arrival_pct,
+
+-- DISRUPTION RATE (%): arrivals outside the +/- 3 min buffer (on_time_flag = FALSE)
+    ROUND(100.0 * COUNT(*) FILTER (WHERE f.on_time_flag = FALSE) / COUNT(*), 2) AS disruption_rate_pct
+
+FROM dwh.fact_bus_performance f
+JOIN dwh.dim_time t
+  ON f.time_key = t.time_key
+
+-- Only measured delays; cancelled trips have no meaningful arrival delay.
+WHERE f.is_realtime = TRUE
+  AND f.is_canceled = FALSE
+
+GROUP BY t.hour, t.time_of_day, t.is_peak_hour
+-- Exclude hours with too few observations (e.g. late night).
+HAVING COUNT(*) >= 30
+-- Hours with the greatest average delay first
+ORDER BY avg_arrival_delay_sec DESC;
+
+-- ---------------------------------------------------------------------
+-- PART 2: Delays by day of week
+--   - Public holidays are excluded: they run on a weekend timetable and would distort the weekday they fall on.
+--   - days_observed shows how many distinct dates stand behind each weekday:
+--     with only a few weeks of data, one bad (e.g. snowy) day can dominate a weekday average.
+-- ---------------------------------------------------------------------
+SELECT
+    d.weekday_nr,
+    d.weekday,
+    d.is_weekend,
+
+-- Number of distinct service dates contributing to this weekday
+    COUNT(DISTINCT d.date_key) AS days_observed,
+    COUNT(*) AS total_stop_observations,
+
+    ROUND(AVG(f.arrival_delay_sec), 2) AS avg_arrival_delay_sec,
+    ROUND(AVG(ABS(f.arrival_delay_sec)), 2) AS avg_abs_deviation_sec,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE f.arrival_delay_sec > 180) / COUNT(*), 2) AS late_arrival_pct,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE f.on_time_flag = FALSE) / COUNT(*), 2) AS disruption_rate_pct
+
+FROM dwh.fact_bus_performance f
+JOIN dwh.dim_date d
+  ON f.date_key = d.date_key
+
+WHERE f.is_realtime = TRUE
+  AND f.is_canceled = FALSE
+  AND d.is_holiday = FALSE
+
+GROUP BY d.weekday_nr, d.weekday, d.is_weekend
+HAVING COUNT(*) >= 30
+-- Weekdays with the greatest average delay first
+ORDER BY avg_arrival_delay_sec DESC;
+
+-- =====================================================================
+-- Q4: Which districts (or areas around stops) experience the greatest schedule deviations due to bad weather?
+-- =====================================================================
+-- Approach: compare each district's deviation in BAD weather against its own CLEAR weather baseline.
+--   - Bad weather = weather_category IN ('rain', 'snow', 'fog'); baseline = 'clear'; 'other' is excluded.
+--   - Deviation = AVG(ABS(arrival_delay_sec)): early and late both count as deviating from the schedule.
+--   - District comes from dim_stop (SCD Type 2): the fact row's stop_key already points to the stop
+--     version valid at event time, so no is_current filter is needed.
+-- ---------------------------------------------------------------------
+WITH stop_events_weather AS (
+    SELECT
+        s.district,
+        CASE
+            WHEN w.weather_category = 'clear'                  THEN 'clear'
+            WHEN w.weather_category IN ('rain', 'snow', 'fog') THEN 'bad'
+        END AS weather_group,
+        f.arrival_delay_sec,
+        f.on_time_flag
+    FROM dwh.fact_bus_performance f
+    JOIN dwh.dim_stop s
+      ON f.stop_key = s.stop_key
+    JOIN dwh.fact_weather w
+      ON f.weather_key = w.weather_key
+    WHERE f.is_realtime = TRUE
+      AND f.is_canceled = FALSE
+      AND s.district IS NOT NULL
+),
+
+-- ---------------------------------------------------------------------
+-- Aggregate to one row per (district, weather_group).
+-- ---------------------------------------------------------------------
+district_weather AS (
+    SELECT
+        district,
+        weather_group,
+        COUNT(*) AS total_stop_observations,
+        AVG(arrival_delay_sec) AS avg_arrival_delay_sec,
+        AVG(ABS(arrival_delay_sec)) AS avg_abs_deviation_sec,
+        100.0 * COUNT(*) FILTER (WHERE on_time_flag = FALSE) / COUNT(*) AS disruption_rate_pct
+    FROM stop_events_weather
+    -- Drops the 'other' weather category (weather_group is NULL)
+    WHERE weather_group IS NOT NULL
+    GROUP BY district, weather_group
+    -- At least 30 observations per district and weather group
+    HAVING COUNT(*) >= 30
+)
+
+-- ---------------------------------------------------------------------
+-- Pivot to one row per district: clear baseline vs bad weather side by side.
+-- ---------------------------------------------------------------------
+SELECT
+    district,
+
+    MAX(total_stop_observations) FILTER (WHERE weather_group = 'clear') AS obs_clear,
+    MAX(total_stop_observations) FILTER (WHERE weather_group = 'bad')   AS obs_bad_weather,
+
+-- Average absolute schedule deviation (seconds)
+    ROUND(MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'clear'), 2) AS abs_deviation_clear_sec,
+    ROUND(MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'bad'),   2) AS abs_deviation_bad_sec,
+
+-- "Bad weather penalty": extra deviation in bad weather over the district's own clear baseline
+    ROUND(
+        MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'bad') -
+        MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'clear'),
+        2
+    ) AS bad_weather_penalty_sec,
+
+-- Disruption rate (%) and its increase in percentage points
+    ROUND(MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'clear'), 2) AS disruption_pct_clear,
+    ROUND(MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'bad'),   2) AS disruption_pct_bad,
+    ROUND(
+        MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'bad') -
+        MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'clear'),
+        2
+    ) AS disruption_increase_pp
+
+FROM district_weather
+GROUP BY district
+-- Keep only districts that have BOTH a clear and a bad weather group (otherwise no comparison is possible)
+HAVING COUNT(*) = 2
+-- Districts where bad weather adds the most deviation first
+ORDER BY bad_weather_penalty_sec DESC;
+
+-- =====================================================================
+-- Q5: To what extent do difficult road sections and weather conditions (e.g., snowfall or rain)
+--     slow down traffic in a specific city district or between stops?
+-- =====================================================================
+-- Measure: avg_speed_kmh = mean GPS speed during the 120 s before the bus arrived at the stop,
+--   i.e. the speed on the approach to that stop.
+-- Slowdown (%) = 100 * (1 - speed in rain or snow / speed in clear weather).
+-- ---------------------------------------------------------------------
+-- PART 1: Speed by district and weather condition
+--   To look at one specific district, add e.g.  AND s.district = 'Annelinn'  to the WHERE clause.
+-- ---------------------------------------------------------------------
+WITH district_speed AS (
+    SELECT
+        s.district,
+        w.weather_category,
+        COUNT(*) AS total_stop_observations,
+        AVG(f.avg_speed_kmh) AS avg_speed_kmh
+    FROM dwh.fact_bus_performance f
+    JOIN dwh.dim_stop s
+      ON f.stop_key = s.stop_key
+    JOIN dwh.fact_weather w
+      ON f.weather_key = w.weather_key
+    WHERE f.is_realtime = TRUE
+      AND f.is_canceled = FALSE
+      -- Speed is only available when GPS pings were matched in the 120 s window
+      AND f.avg_speed_kmh IS NOT NULL
+      AND s.district IS NOT NULL
+      AND w.weather_category IN ('clear', 'rain', 'snow')
+    GROUP BY s.district, w.weather_category
+    HAVING COUNT(*) >= 30
+)
+SELECT
+    district,
+
+    ROUND(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear'), 1) AS speed_clear_kmh,
+    ROUND(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'rain'),  1) AS speed_rain_kmh,
+    ROUND(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'snow'),  1) AS speed_snow_kmh,
+
+-- Slowdown relative to the clear weather baseline (NULLIF avoids division by zero)
+    ROUND(100.0 * (1 - MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'rain')
+                     / NULLIF(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear'), 0)), 1) AS rain_slowdown_pct,
+    ROUND(100.0 * (1 - MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'snow')
+                     / NULLIF(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear'), 0)), 1) AS snow_slowdown_pct,
+
+    MAX(total_stop_observations) FILTER (WHERE weather_category = 'rain') AS obs_rain,
+    MAX(total_stop_observations) FILTER (WHERE weather_category = 'snow') AS obs_snow
+
+FROM district_speed
+GROUP BY district
+-- A clear weather baseline is required for the comparison
+HAVING MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear') IS NOT NULL
+ORDER BY snow_slowdown_pct DESC NULLS LAST, rain_slowdown_pct DESC NULLS LAST;
+
+-- ---------------------------------------------------------------------
+-- PART 2: Difficult road sections between consecutive stops, by weather
+--   - A road section is a physical stop pair (from_stop -> to_stop), so we aggregate ACROSS bus lines
+--     (unlike Q2, which looks per line).
+--   - Stops are identified by stop_id, not stop_name: two stops on opposite sides of a road share a name.
+--   - LAG() runs over ALL rows of the trip (no is_realtime filter before the window), and we then require
+--     stop_index = prev_stop_index + 1, so a missing or non-realtime stop never creates a fake "segment".
+--   - "Difficult" = low speed in clear weather (speed_clear_kmh) and/or a large weather slowdown.
+-- ---------------------------------------------------------------------
+WITH stop_sequence AS (
+    SELECT
+        f.stop_index,
+        f.is_realtime,
+        f.is_canceled,
+        f.arrival_delay_sec,
+        f.avg_speed_kmh,
+        f.weather_key,
+        s.stop_id,
+        s.stop_name,
+        s.district,
+
+        LAG(f.stop_index)        OVER w AS prev_stop_index,
+        LAG(f.is_realtime)       OVER w AS prev_is_realtime,
+        LAG(s.stop_id)           OVER w AS prev_stop_id,
+        LAG(s.stop_name)         OVER w AS prev_stop_name,
+        LAG(f.arrival_delay_sec) OVER w AS prev_delay_sec
+
+    FROM dwh.fact_bus_performance f
+    JOIN dwh.dim_stop s
+      ON f.stop_key = s.stop_key
+
+    WINDOW w AS (
+        -- One bus run on one service date, traversed in stop order
+        PARTITION BY f.date_key, f.trip_key
+        ORDER BY f.stop_index
+    )
+),
+
+-- ---------------------------------------------------------------------
+-- One row per traversal of a segment, tagged with the weather at arrival.
+-- ---------------------------------------------------------------------
+segments AS (
+    SELECT
+        ss.prev_stop_id,
+        ss.stop_id,
+        ss.prev_stop_name AS from_stop,
+        ss.stop_name      AS to_stop,
+        -- Segment is assigned to the district of its destination stop
+        ss.district,
+        w.weather_category,
+        ss.avg_speed_kmh,
+        -- Delay accumulated on this segment (> 0 = bus lost time)
+        ss.arrival_delay_sec - ss.prev_delay_sec AS delay_added_sec
+    FROM stop_sequence ss
+    JOIN dwh.fact_weather w
+      ON ss.weather_key = w.weather_key
+    WHERE ss.is_realtime = TRUE
+      AND ss.prev_is_realtime = TRUE
+      AND ss.is_canceled = FALSE
+      -- Only truly consecutive stops
+      AND ss.stop_index = ss.prev_stop_index + 1
+      AND ss.avg_speed_kmh IS NOT NULL
+      AND w.weather_category IN ('clear', 'rain', 'snow')
+),
+
+segment_weather AS (
+    SELECT
+        prev_stop_id,
+        stop_id,
+        from_stop,
+        to_stop,
+        district,
+        weather_category,
+        COUNT(*) AS segment_trips_count,
+        AVG(avg_speed_kmh)   AS avg_speed_kmh,
+        AVG(delay_added_sec) AS avg_delay_added_sec
+    FROM segments
+    GROUP BY prev_stop_id, stop_id, from_stop, to_stop, district, weather_category
+    HAVING COUNT(*) >= 30
+)
+
+-- ---------------------------------------------------------------------
+-- Pivot to one row per road section.
+-- ---------------------------------------------------------------------
+SELECT
+    from_stop,
+    to_stop,
+    district,
+
+    ROUND(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear'), 1) AS speed_clear_kmh,
+    ROUND(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'rain'),  1) AS speed_rain_kmh,
+    ROUND(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'snow'),  1) AS speed_snow_kmh,
+
+    ROUND(100.0 * (1 - MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'rain')
+                     / NULLIF(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear'), 0)), 1) AS rain_slowdown_pct,
+    ROUND(100.0 * (1 - MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'snow')
+                     / NULLIF(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear'), 0)), 1) AS snow_slowdown_pct,
+
+-- Delay added on the segment (seconds) in clear vs bad weather
+    ROUND(MAX(avg_delay_added_sec) FILTER (WHERE weather_category = 'clear'), 1) AS delay_added_clear_sec,
+    ROUND(MAX(avg_delay_added_sec) FILTER (WHERE weather_category = 'rain'),  1) AS delay_added_rain_sec,
+    ROUND(MAX(avg_delay_added_sec) FILTER (WHERE weather_category = 'snow'),  1) AS delay_added_snow_sec,
+
+    MAX(segment_trips_count) FILTER (WHERE weather_category = 'clear') AS obs_clear
+
+FROM segment_weather
+GROUP BY prev_stop_id, stop_id, from_stop, to_stop, district
+HAVING MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear') IS NOT NULL
+-- Sections that slow down the most in snow or rain first
+ORDER BY GREATEST(
+             100.0 * (1 - MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'snow')
+                        / NULLIF(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear'), 0)),
+             100.0 * (1 - MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'rain')
+                        / NULLIF(MAX(avg_speed_kmh) FILTER (WHERE weather_category = 'clear'), 0))
+         ) DESC NULLS LAST;
