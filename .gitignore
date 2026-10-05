@@ -3,3 +3,5 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 bus_data
+CLAUDE.md
+Project_1_report_team13.md
