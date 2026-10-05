@@ -1,6 +1,6 @@
 # Tartu Bus Data API Overview
 
-Bus movement and schedule data is queried from [tartu.pilet.ee] (https://tartu.pilet.ee/et/explore?selectedTab=routes).
+Bus movement and schedule data is queried from [tartu.pilet.ee](https://tartu.pilet.ee/et/explore?selectedTab=routes).
 
 ## 1. Bus Live Data Dataset (source for [Realtime WebSocket](https://github.com/merettearula1/data-engineering-team-13/blob/main/bus_live_data.py))
 
