@@ -1,0 +1,22 @@
+{
+    "name": "Tartu-Tõravere",
+    "wmocode": "26242",
+    "longitude": "26.46130555576748",
+    "latitude": "58.264072222179834",
+    "phenomenon": "Variable clouds",
+    "visibility": "35",
+    "precipitations": "0",
+    "airpressure": "1016.7",
+    "relativehumidity": "92.1",
+    "airtemperature": "10.7",
+    "winddirection": "256",
+    "windspeed": "1.7",
+    "windspeedmax": "3.5",
+    "waterlevel": "",
+    "waterlevel_eh2000": "",
+    "watertemperature": "",
+    "uvindex": "",
+    "sunshineduration": "111",
+    "globalradiation": "-3.1",
+    "snapshot_time": "2026-10-05T00:05:40.255124"
+}
