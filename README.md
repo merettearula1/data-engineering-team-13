@@ -25,6 +25,18 @@ Bus movement and schedule data is queried from [tartu.pilet.ee](https://tartu.pi
 ## Data Dictionary
 The project's Data Dictionary for star schema can be found [here](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md).
 
+## Setup & run
+Requirements: Docker Desktop.
+
+```bash
+cp .env.example .env          # then set POSTGRES_PASSWORD
+docker compose up -d --build
+```
+- Airflow UI: http://localhost:8080 → unpause and trigger `tartu_transit_pipeline`
+- Warehouse: Postgres on `localhost:5433`, database `tartu_transit`, schemas `bronze` /
+`silver` / `gold`
+- Reset the database from scratch: `docker compose down -v && docker compose up -d`
+
 
 
 ---
