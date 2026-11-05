@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: setup_check
+    description: "Temporary smoke-test model confirming the dbt-to-warehouse connection."
+    columns:
+      - name: id
+        description: "Constant 1."
+        tests: [unique, not_null]
+      - name: checked_at
+        description: "Time the model was built."

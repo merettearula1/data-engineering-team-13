@@ -1,0 +1,14 @@
+name: tartu_transit
+version: "1.0.0"
+config-version: 2
+profile: tartu_transit
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+models:
+  tartu_transit:
+    setup_check:          # temporary model that only proves the connection works
+      +schema: silver
+      +materialized: view
+    # later: silver/ -> +schema: silver, gold/ -> +schema: gold
