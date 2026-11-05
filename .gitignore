@@ -6,3 +6,11 @@ bus_data
 CLAUDE.md
 Project_1_report_team13.md
 weather_data
+
+# uv
+.venv/
+UV_juhend.md
+uv.lock
+
+# dokumendid
+*.pdf
