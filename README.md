@@ -1,29 +1,18 @@
 # Tartu Transit Analytics using live bus data and live weather data
 
-In the repository, there are following files:
-* Python-scripts for accessing [live bus data](https://github.com/merettearula1/data-engineering-team-13/blob/main/bus_live_data.py) and [live weather data](https://github.com/merettearula1/data-engineering-team-13/blob/main/weather_data.py).
-* [Description of the both datasets: live bus data and live weather data](https://github.com/merettearula1/data-engineering-team-13/blob/main/Datasets.md).
-* Sample data snapshots of [raw live bus data](https://github.com/merettearula1/data-engineering-team-13/blob/main/sample_bus_data_snapshot.json) and [raw live weather data](https://github.com/merettearula1/data-engineering-team-13/blob/main/sample_weather_data_snapshot.json).
-* [Star_Schema](https://github.com/merettearula1/data-engineering-team-13/blob/main/star_schema.png) and [SQL Demo for Star Schema](https://github.com/merettearula1/data-engineering-team-13/blob/main/star_schema.sql).
-* [Data Dictionary](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md) of the star schema.
-* [SQL Demo Queries](https://github.com/merettearula1/data-engineering-team-13/blob/main/Demo_queries.sql) based on the project's Business Questions.
+## Project part 1
 
-## Data Sources
-The full descriptions of the datasets can be found [here](https://github.com/merettearula1/data-engineering-team-13/blob/main/Datasets.md).
+#### Used data, architecture and modeling info can be found in the [datasets_architecture folder](datasets_architecture) and [readme](datasets_architecture/README.md).
 
-### How the live bus data is structured in the model?
-Bus movement and schedule data is queried from [tartu.pilet.ee](https://tartu.pilet.ee/et/explore?selectedTab=routes) and is used to describe:
+## Raw data collection
 
-* Bus locations and movements (`Bus-live-data`, 14 columns)
-* Bus stops (`Bus-stops`, 5 columns)
-* Routes (`Bus-routes`, 3 columns)
-* Scheduled trips (`Bus-route-trips`, 5 columns)
-* Scheduled times (`Bus-schedule`, 16 columns)
+#### We collected raw data using a Microsoft Azure VM that is running continuously (as the pilet.ee api doesn't offer legacy data). 
+#### For data storage we used Azure storage blobs that are anonymously accessible. Full code can be found in the [raw_data_collection folder](raw_data_collection) and [readme](raw_data_collection/README.md).
 
-![img](bus_data_sources_diagram.png)
+## Project part 2 
 
-## Data Dictionary
-The project's Data Dictionary for star schema can be found [here](https://github.com/merettearula1/data-engineering-team-13/blob/main/Data_dictionary.md).
+#### Data warehouse implementation and ETL pipelines can be found in the [data_warehouse folder](data_warehouse) and [readme](data_warehouse/README.md).
+
 
 ## Setup & run
 Requirements: Docker Desktop.
