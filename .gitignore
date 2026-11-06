@@ -2,12 +2,11 @@
 __pycache__/
 .pytest_cache/
 *.py[cod]
-bus_data
 CLAUDE.md
-Project_1_report_team13.md
-weather_data
 logs/
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
 dbt/.user.yml
+raw_data_collection
+data_warehouse
