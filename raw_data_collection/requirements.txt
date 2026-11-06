@@ -1,0 +1,4 @@
+requests>=2.31,<3
+websockets>=13,<16
+azure-identity>=1.17,<2
+azure-storage-blob>=12.22,<13

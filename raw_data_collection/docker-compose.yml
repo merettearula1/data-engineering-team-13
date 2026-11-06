@@ -1,0 +1,50 @@
+services:
+  bus-live:
+    build: .
+    command: python -m collectors.bus_live
+    env_file: .env
+    volumes: ["./data:/app/data"]
+    restart: unless-stopped
+  weather:
+    build: .
+    command: python -m collectors.weather
+    env_file: .env
+    volumes: ["./data:/app/data"]
+    restart: unless-stopped
+  bus-reference:
+    build: .
+    command: python -m collectors.bus_reference
+    env_file: .env
+    volumes: ["./data:/app/data"]
+    restart: unless-stopped
+  bus-trips:
+    build: .
+    command: python -m collectors.bus_trips
+    env_file: .env
+    volumes: ["./data:/app/data"]
+    restart: unless-stopped
+  bus-departures:
+    build: .
+    command: python -m collectors.bus_departures
+    env_file: .env
+    volumes: ["./data:/app/data"]
+    restart: unless-stopped
+  bus-trip-stop-times:
+    build: .
+    command: python -m collectors.bus_trip_stop_times
+    env_file: .env
+    volumes: ["./data:/app/data"]
+    restart: unless-stopped
+  blob-uploader:
+    build: .
+    command: python -m blob_uploader.uploader
+    env_file: .env
+    environment:
+      UPLOAD_INTERVAL_SECONDS: 60
+      RAW_DATA_DIR: /app/data/raw
+      UPLOADER_STATE_DB: /app/state/uploader.db
+      AZURE_STORAGE_CONTAINER: raw-data
+    volumes:
+      - ./data:/app/data:ro
+      - ./uploader_state:/app/state
+    restart: unless-stopped
