@@ -49,11 +49,11 @@ with DAG(
             logical_date.to_date_string(),
         )
 
-    @task
+    @task(retries=3, retry_delay=pendulum.duration(minutes=1))
     def ingest_weather(date_range: tuple[str, str | None]) -> dict:
         return ingest(start_date=date_range[0], end_date=date_range[1], datasets={"weather"})
 
-    @task
+    @task(retries=3, retry_delay=pendulum.duration(minutes=1))
     def ingest_bus(date_range: tuple[str, str | None]) -> dict:
         return ingest(start_date=date_range[0], end_date=date_range[1], datasets=BUS_DATASETS)
 

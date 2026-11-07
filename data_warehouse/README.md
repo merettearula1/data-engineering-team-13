@@ -18,7 +18,7 @@ You can optionally set a DAG-run `start_date`, like `2026-10-21`, to load onward
 
 ## Setup
 
-Run to create a local `.env` file. (Chose this over .env.example as we can generate logins).
+Run to create a local `.env` file. (Chose this over .env.example as we can generate secrets).
 
 ### Bash (Linux)
 
