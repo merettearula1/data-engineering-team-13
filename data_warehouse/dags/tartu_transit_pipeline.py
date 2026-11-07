@@ -1,22 +1,30 @@
-"""
-Tartu Transit pipeline: ingest bus + weather data into bronze, check data quality,
-then build and test the silver/gold layers with dbt.
+"""Load bus and weather data, validate, then run dbt transformations."""
+import sys
+sys.path.insert(0, "/opt/airflow")
 
-The ingestion tasks are placeholders until the ingestion code is ready.
-Contract for each ingestion task: load ONLY the given run_date into its bronze table,
-deleting that date's rows first, so reruns never create duplicates (idempotent).
-"""
 import pendulum
-from airflow.providers.standard.operators.bash import BashOperator
-from airflow.sdk import Param, dag, task
+from airflow import DAG
+from airflow.decorators import task
+from airflow.models.param import Param
+from airflow.operators.bash import BashOperator
 
-DBT_BIN = "/home/airflow/dbt_venv/bin/dbt"
+from ingestion.pipeline import ingest
+
 DBT_PROJECT_DIR = "/opt/airflow/dbt"
 LOCAL_TZ = "Europe/Tallinn"
+BUS_DATASETS = {
+    "bus_departures",
+    "bus_live",
+    "bus_routes",
+    "bus_stops",
+    "bus_trip_stop_times",
+    "bus_trips",
+}
 
 
-@dag(
+with DAG(
     dag_id="tartu_transit_pipeline",
+    description="Ingest public bus and weather files into the warehouse",
     schedule="@daily",
     start_date=pendulum.datetime(2026, 11, 1, tz=LOCAL_TZ),
     catchup=False,
@@ -28,48 +36,45 @@ LOCAL_TZ = "Europe/Tallinn"
         ),
     },
     tags=["tartu", "bronze", "dbt"],
-)
-def tartu_transit_pipeline():
+) as dag:
 
     @task
     def resolve_run_date(**context) -> str:
-        """Use the run_date parameter if given, otherwise the logical date (or today for
-manual runs)."""
         if context["params"].get("run_date"):
             return context["params"]["run_date"]
-        logical_date = context.get("logical_date") or pendulum.now(LOCAL_TZ)
-        return logical_date.strftime("%Y-%m-%d")
+        return context["logical_date"].strftime("%Y-%m-%d")
 
     @task
-    def ingest_weather(run_date: str) -> None:
-        # TODO (weather owner): fetch ilmateenistus.ee observations -> bronze.weather_raw for run_date
-        print(f"[placeholder] ingest weather for {run_date}")
+    def ingest_weather(run_date: str) -> dict:
+        return ingest(run_date=run_date, datasets={"weather"})
 
     @task
-    def ingest_bus(run_date: str) -> None:
-        # TODO (bus owner): load bus live + schedule data -> bronze tables for run_date
-        print(f"[placeholder] ingest bus data for {run_date}")
+    def ingest_bus(run_date: str) -> dict:
+        return ingest(run_date=run_date, datasets=BUS_DATASETS)
 
     @task
-    def dq_check_bronze(run_date: str) -> None:
-        # TODO: once bronze tables exist, query them and raise ValueError on e.g.
-        #   - 0 rows loaded for run_date
-        #   - NULL trip_id / stop_id
-        #   - duplicate (trip_id, stop_index, service_date)
-        print(f"[placeholder] data-quality checks for {run_date}")
+    def dq_check_bronze(weather: dict, bus: dict) -> None:
+        """Make the ingestion quality result visible as its own DAG task."""
+        processed_files = sum(
+            result["loaded_files"] + result["skipped_files"]
+            for result in (weather, bus)
+        )
+        if processed_files == 0:
+            raise ValueError("Data-quality check failed: no bus or weather files found")
+        print(f"Data-quality check passed: {weather=}, {bus=}")
 
     dbt_run = BashOperator(
         task_id="dbt_run",
-        bash_command=f"{DBT_BIN} run --project-dir {DBT_PROJECT_DIR}",
+        bash_command=f"dbt run --project-dir {DBT_PROJECT_DIR}",
     )
 
     dbt_test = BashOperator(
         task_id="dbt_test",
-        bash_command=f"{DBT_BIN} test --project-dir {DBT_PROJECT_DIR}",
+        bash_command=f"dbt test --project-dir {DBT_PROJECT_DIR}",
     )
 
     run_date = resolve_run_date()
-    [ingest_weather(run_date), ingest_bus(run_date)] >> dq_check_bronze(run_date) >> dbt_run >> dbt_test
-
-
-tartu_transit_pipeline()
+    weather = ingest_weather(run_date)
+    bus = ingest_bus(run_date)
+    check = dq_check_bronze(weather, bus)
+    [weather, bus] >> check >> dbt_run >> dbt_test
