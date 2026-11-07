@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from datetime import date
+import re
 
 from sqlalchemy import create_engine
 
@@ -22,10 +23,15 @@ DATASETS = {
 }
 
 
-def ingest(run_date: str | None = None, datasets: set[str] | None = None) -> dict:
-    """Load selected collector datasets for an optional date partition."""
-    if run_date:
-        date.fromisoformat(run_date)
+def ingest(start_date: str | None = None, end_date: str | None = None,
+           datasets: set[str] | None = None) -> dict:
+    """Load selected datasets within an optional inclusive date range."""
+    if start_date:
+        date.fromisoformat(start_date)
+    if end_date:
+        date.fromisoformat(end_date)
+    if start_date and end_date and start_date > end_date:
+        raise ValueError("start_date must not be later than end_date")
 
     manifest = download_manifest()
     database_url = os.environ["WAREHOUSE_DATABASE_URL"]
@@ -45,7 +51,13 @@ def ingest(run_date: str | None = None, datasets: set[str] | None = None) -> dic
                 continue
             if not path.endswith((".json", ".jsonl", ".jsonl.gz")):
                 continue
-            if run_date and f"date={run_date}" not in path:
+            partition_match = re.search(r"(?:^|/)date=(\d{4}-\d{2}-\d{2})(?:/|$)", path)
+            partition_date = partition_match.group(1) if partition_match else None
+            if (
+                partition_date is None
+                or (start_date and partition_date < start_date)
+                or (end_date and partition_date > end_date)
+            ):
                 continue
             checksum = entry.get("checksum")
             if not isinstance(checksum, str):
@@ -68,7 +80,7 @@ def ingest(run_date: str | None = None, datasets: set[str] | None = None) -> dic
                     summary["skipped_files"] += 1
                     continue
                 load_file(connection, source=dataset, path=path, checksum=checksum,
-                          run_date=run_date, records=records)
+                          run_date=partition_date, records=records)
             summary["loaded_files"] += 1
             summary["records_loaded"] += len(records)
             summary["duplicates_removed"] += duplicates

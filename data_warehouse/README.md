@@ -12,7 +12,8 @@ Blob manifest into PostgreSQL, then runs the dbt models.
 - [`loader.py`](ingestion/loader.py) creates and loads the Bronze tables. (into `bronze.raw_events`)
 
 
-In the pipeline we can optionally filter files by a DAG-run `run_date`, such as `2026-11-06`.
+By default, the dag loads files from today and yesterday.
+You can optionally set a DAG-run `start_date`, like `2026-10-21`, to load onwards.
 
 
 ## Setup
@@ -103,5 +104,5 @@ To Connect the PostGRE server to pgadmin use
 To trigger a date-specific run in Airflow, use the DAG configuration:
 
 ```json
-{"run_date": "2026-10-21"}
+{"start_date": "2026-10-21"}
 ```

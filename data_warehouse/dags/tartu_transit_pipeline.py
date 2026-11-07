@@ -29,28 +29,33 @@ with DAG(
     start_date=pendulum.datetime(2026, 11, 1, tz=LOCAL_TZ),
     catchup=False,
     params={
-        "run_date": Param(
+        "start_date": Param(
             None,
             type=["null", "string"],
-            description="Date to process (YYYY-MM-DD). Empty = the run's logical date.",
+            description="Load data from this date onwards (YYYY-MM-DD). Empty = today and yesterday.",
         ),
     },
     tags=["tartu", "bronze", "dbt"],
 ) as dag:
 
     @task
-    def resolve_run_date(**context) -> str:
-        if context["params"].get("run_date"):
-            return context["params"]["run_date"]
-        return context["logical_date"].strftime("%Y-%m-%d")
+    def resolve_date_range(**context) -> tuple[str, str | None]:
+        start_date = context["params"].get("start_date")
+        if start_date:
+            return start_date, None
+        logical_date = context["logical_date"]
+        return (
+            logical_date.subtract(days=1).to_date_string(),
+            logical_date.to_date_string(),
+        )
 
     @task
-    def ingest_weather(run_date: str) -> dict:
-        return ingest(run_date=run_date, datasets={"weather"})
+    def ingest_weather(date_range: tuple[str, str | None]) -> dict:
+        return ingest(start_date=date_range[0], end_date=date_range[1], datasets={"weather"})
 
     @task
-    def ingest_bus(run_date: str) -> dict:
-        return ingest(run_date=run_date, datasets=BUS_DATASETS)
+    def ingest_bus(date_range: tuple[str, str | None]) -> dict:
+        return ingest(start_date=date_range[0], end_date=date_range[1], datasets=BUS_DATASETS)
 
     @task
     def dq_check_bronze(weather: dict, bus: dict) -> None:
@@ -73,8 +78,8 @@ with DAG(
         bash_command=f"dbt test --project-dir {DBT_PROJECT_DIR}",
     )
 
-    run_date = resolve_run_date()
-    weather = ingest_weather(run_date)
-    bus = ingest_bus(run_date)
+    date_range = resolve_date_range()
+    weather = ingest_weather(date_range)
+    bus = ingest_bus(date_range)
     check = dq_check_bronze(weather, bus)
     [weather, bus] >> check >> dbt_run >> dbt_test
