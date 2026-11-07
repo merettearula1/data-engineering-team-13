@@ -14,18 +14,11 @@
 #### Data warehouse implementation and ETL pipelines can be found in the [data_warehouse folder](data_warehouse) and [readme](data_warehouse/README.md).
 
 
-## Setup & run
-Requirements: Docker Desktop.
+### UI links (Airflow and pgAdmin)
 
-```bash
-cp .env.example .env          # then set POSTGRES_PASSWORD
-docker compose up -d --build
-```
-- Airflow UI: http://localhost:8080 → unpause and trigger `tartu_transit_pipeline`
-- Warehouse: Postgres on `localhost:5433`, database `tartu_transit`, schemas `bronze` /
-`silver` / `gold`
-- Reset the database from scratch: `docker compose down -v && docker compose up -d`
+Airflow: http://localhost:8080
 
+pgAdmin: http://localhost:5050
 
 
 ---
