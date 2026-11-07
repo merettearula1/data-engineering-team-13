@@ -94,7 +94,8 @@ To Connect the PostGRE server to pgadmin use
 |Var|Value|
 |---|---|
 |Name|data_warehouse|
-|Host|5432|
+|Host|postgres|
+|Port|5432|
 |Maintenance db|warehouse|
 |Username|warehouse_admin|
 |Password|POSTGRES_PASSWORD (in .env)|
