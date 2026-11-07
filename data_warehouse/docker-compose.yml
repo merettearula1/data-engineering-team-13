@@ -24,26 +24,34 @@ services:
       postgres:
         condition: service_healthy
     environment: &airflow-common-env
+      # Airflow core
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
       AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      # Shared security keys
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:?Set AIRFLOW_FERNET_KEY in .env}
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:?Set AIRFLOW_JWT_SECRET in .env}
+      AIRFLOW__API__SECRET_KEY: ${AIRFLOW_API_SECRET_KEY:?Set AIRFLOW_API_SECRET_KEY in .env}
+      # Database
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://warehouse_admin:${POSTGRES_PASSWORD}@postgres:5432/airflow
-      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:?Set AIRFLOW_WEBSERVER_SECRET_KEY in .env}
+      # Admin account
       AIRFLOW_ADMIN_USERNAME: ${AIRFLOW_ADMIN_USERNAME:-admin}
       AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:?Set AIRFLOW_ADMIN_PASSWORD in .env}
       AIRFLOW_ADMIN_EMAIL: ${AIRFLOW_ADMIN_EMAIL:-admin@example.com}
+      # Warehouse connection
       WAREHOUSE_HOST: postgres
       WAREHOUSE_PORT: "5432"
       WAREHOUSE_USER: warehouse_admin
-      WAREHOUSE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      WAREHOUSE_PASSWORD: ${POSTGRES_PASSWORD}
       WAREHOUSE_DB: warehouse
       WAREHOUSE_DATABASE_URL: postgresql+psycopg2://warehouse_admin:${POSTGRES_PASSWORD}@postgres:5432/warehouse
+      # dbt
       DBT_VENV_PATH: /opt/airflow/dbt_venv
       DBT_PROFILES_DIR: /opt/airflow/dbt
       DBT_TARGET_PATH: /tmp/dbt/target
       DBT_LOG_PATH: /tmp/dbt/logs
-      PATH: /opt/airflow/dbt_venv/bin:$$PATH
+
     volumes: &airflow-common-volumes
       - ./dags:/opt/airflow/dags
       - ./ingestion:/opt/airflow/ingestion
@@ -83,8 +91,8 @@ services:
     build: .
     restart: unless-stopped
     depends_on:
-      airflow-init:
-        condition: service_completed_successfully
+      airflow-api-server:
+        condition: service_healthy
     environment: *airflow-common-env
     volumes: *airflow-common-volumes
     command: scheduler
@@ -93,8 +101,8 @@ services:
     build: .
     restart: unless-stopped
     depends_on:
-      airflow-init:
-        condition: service_completed_successfully
+      airflow-api-server:
+        condition: service_healthy
     environment: *airflow-common-env
     volumes: *airflow-common-volumes
     command: dag-processor
