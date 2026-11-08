@@ -89,21 +89,18 @@ Airflow: http://localhost:8080
 
 pgAdmin: http://localhost:5050
 
+---
+
 To Connect the PostGRE server to pgadmin use
 
 |Var|Value|
 |---|---|
-|Name|data_warehouse|
-|Host|postgres|
-|Port|5432|
-|Maintenance db|warehouse|
-|Username|warehouse_admin|
+|Name|`data_warehouse`|
+|Host|`postgres`|
+|Port|`5432`|
+|Maintenance db|`warehouse`|
+|Username|`warehouse_admin`|
 |Password|POSTGRES_PASSWORD (in .env)|
 
 ---
 
-To trigger a date-specific run in Airflow, use the DAG configuration:
-
-```json
-{"start_date": "2026-10-21"}
-```

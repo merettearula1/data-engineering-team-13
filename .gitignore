@@ -3,8 +3,3 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 CLAUDE.md
-logs/
-dbt/target/
-dbt/logs/
-dbt/dbt_packages/
-dbt/.user.yml

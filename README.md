@@ -14,12 +14,5 @@
 #### Data warehouse implementation and ETL pipelines can be found in the [data_warehouse folder](data_warehouse) and [readme](data_warehouse/README.md).
 
 
-### UI links (Airflow and pgAdmin)
-
-Airflow: http://localhost:8080
-
-pgAdmin: http://localhost:5050
-
-
 ---
 This project is developed as part of the Data Engineering 2026/27 fall course at the University of Tartu.
