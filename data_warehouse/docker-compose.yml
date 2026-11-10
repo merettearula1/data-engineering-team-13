@@ -17,12 +17,29 @@ services:
       timeout: 5s
       retries: 10
 
-  airflow-init:
-    build: .
+  warehouse-init:
+    image: postgres:16
     restart: "no"
     depends_on:
       postgres:
         condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: warehouse_admin
+      POSTGRES_DB: airflow
+      WAREHOUSE_DB: warehouse
+    volumes:
+      - ./sql/init:/opt/warehouse-init:ro
+    command: ["bash", "/opt/warehouse-init/01_create_warehouse.sh"]
+
+  airflow-init:
+    build: .
+    restart: "no"
+    depends_on:
+      warehouse-init:
+        condition: service_completed_successfully
     environment: &airflow-common-env
       # Airflow core
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
