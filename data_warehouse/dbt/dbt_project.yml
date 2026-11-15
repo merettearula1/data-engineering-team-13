@@ -5,10 +5,20 @@ profile: tartu_transit
 
 model-paths: ["models"]
 macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
 
 models:
   tartu_transit:
-    setup_check:          # temporary model that only proves the connection works
+    setup_check:
       +schema: silver
       +materialized: view
-    # later: silver/ -> +schema: silver, gold/ -> +schema: gold
+
+    silver:
+      +schema: silver
+      +materialized: view
+
+    gold:
+      +schema: gold
+      +materialized: table
+      

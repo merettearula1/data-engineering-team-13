@@ -1,0 +1,220 @@
+version: 2
+models:
+- name: dim_date
+  description: Calendar dimension covering configured dates; static, shared by both facts.
+  columns:
+  - name: date_key
+    description: YYYYMMDD integer primary key.
+    tests:
+    - not_null
+    - unique
+  - name: full_date
+    description: Local calendar date.
+  - name: year
+    description: Calendar year.
+  - name: month
+    description: Calendar month.
+  - name: weekday
+    description: English weekday name.
+  - name: weekday_nr
+    description: ISO weekday (Monday=1).
+  - name: is_weekend
+    description: Saturday or Sunday.
+  - name: is_holiday
+    description: Fixed Estonian holidays only; moving holidays are not represented.
+- name: dim_time
+  description: Minute-of-day dimension; 1440 rows and shared by both facts.
+  columns:
+  - name: time_key
+    description: HHMM integer primary key.
+    tests:
+    - not_null
+    - unique
+  - name: hour
+    description: Hour 0–23.
+  - name: minute
+    description: Minute 0–59.
+  - name: time_of_day
+    description: Day-part category from Project 1.
+  - name: is_peak_hour
+    description: Whether hour is within defined morning/evening peaks.
+- name: dim_route
+  description: Current route descriptions (SCD Type 1) from silver_routes.
+  columns:
+  - name: route_key
+    description: Stable MD5 surrogate key (text), derived from route_id.
+    tests:
+    - not_null
+    - unique
+  - name: route_id
+    description: Ridango natural route/direction ID.
+    tests:
+    - not_null
+  - name: short_name
+    description: Displayed bus line number.
+  - name: long_name
+    description: Route display name.
+  - name: mode
+    description: Transport mode.
+- name: dim_trip
+  description: Latest known trip metadata (SCD Type 1) from silver_stop_events.
+  columns:
+  - name: trip_key
+    description: Stable MD5 surrogate key derived from trip_id.
+    tests:
+    - not_null
+    - unique
+  - name: trip_id
+    description: Natural trip ID.
+    tests:
+    - not_null
+  - name: service_id
+    description: Service identifier.
+  - name: trip_headsign
+    description: Destination text on the trip.
+- name: dim_stop
+  description: Stop history (SCD Type 2) from dbt snapshot snap_stops.
+  columns:
+  - name: stop_key
+    description: Surrogate key identifying one historical stop version.
+    tests:
+    - not_null
+    - unique
+  - name: stop_id
+    description: Natural stop identifier.
+  - name: stop_code
+    description: Public stop code.
+  - name: stop_name
+    description: Stop name during the version.
+  - name: latitude
+    description: Stop latitude during the version.
+  - name: longitude
+    description: Stop longitude during the version.
+  - name: district
+    description: District if supplied or derived upstream.
+  - name: valid_from
+    description: Inclusive version start timestamp.
+  - name: valid_to
+    description: Exclusive version end timestamp.
+  - name: is_current
+    description: True if latest known stop version.
+- name: fact_weather
+  description: One weather observation at one station at one observed_at timestamp.
+  columns:
+  - name: weather_key
+    description: Stable MD5 key for (station_name, observed_at).
+    tests:
+    - not_null
+    - unique
+  - name: date_key
+    description: Local YYYYMMDD of observation (Europe/Tallinn).
+    tests:
+    - not_null
+    - relationships:
+        to: '{{ ref(''dim_date'') }}'
+        field: date_key
+  - name: time_key
+    description: Local HHMM of observation (Europe/Tallinn).
+    tests:
+    - not_null
+    - relationships:
+        to: '{{ ref(''dim_time'') }}'
+        field: time_key
+  - name: station_name
+    description: Weather station.
+    tests:
+    - not_null
+  - name: observed_at
+    description: Actual observation time (timestamptz).
+    tests:
+    - not_null
+  - name: precipitation_mm
+    description: Precipitation in mm.
+  - name: visibility_km
+    description: Visibility in km.
+  - name: temperature_c
+    description: Temperature in Celsius.
+  - name: wind_speed_ms
+    description: Mean wind speed in m/s.
+  - name: wind_speed_max_ms
+    description: Maximum wind speed in m/s.
+  - name: weather_category
+    description: Normalised clear / rain / snow / fog / other category.
+- name: fact_bus_performance
+  description: 'Grain: one trip at one stop_index on one service_date. Real-time delays are predictions supplied
+    by the API, not proven actual arrival times.'
+  columns:
+  - name: performance_key
+    description: Stable MD5 key for (service_date, trip_id, stop_index).
+    tests:
+    - not_null
+    - unique
+  - name: date_key
+    description: Service date YYYYMMDD.
+    tests:
+    - not_null
+    - relationships:
+        to: '{{ ref(''dim_date'') }}'
+        field: date_key
+  - name: time_key
+    description: HHMM of SCHEDULED arrival (Europe/Tallinn).
+    tests:
+    - not_null
+    - relationships:
+        to: '{{ ref(''dim_time'') }}'
+        field: time_key
+  - name: route_key
+    description: Dimension route key.
+    tests:
+    - not_null
+    - relationships:
+        to: '{{ ref(''dim_route'') }}'
+        field: route_key
+  - name: trip_key
+    description: Dimension trip key.
+    tests:
+    - not_null
+    - relationships:
+        to: '{{ ref(''dim_trip'') }}'
+        field: trip_key
+  - name: stop_key
+    description: Historical dimension stop version matched by event time.
+    tests:
+    - not_null
+    - relationships:
+        to: '{{ ref(''dim_stop'') }}'
+        field: stop_key
+  - name: weather_key
+    description: Nullable nearest Tartu-Tõravere weather observation within 60 minutes.
+    tests:
+    - relationships:
+        to: '{{ ref(''fact_weather'') }}'
+        field: weather_key
+  - name: scheduled_arrival
+    description: Scheduled arrival timestamp.
+  - name: scheduled_departure
+    description: Scheduled departure timestamp.
+  - name: realtime_arrival
+    description: API real-time arrival estimate; null for non-realtime rows.
+  - name: realtime_departure
+    description: API real-time departure estimate; null for non-realtime rows.
+  - name: arrival_delay_sec
+    description: Real-time arrival delay estimate (seconds; negative means early); null if not realtime.
+  - name: departure_delay_sec
+    description: Real-time departure delay estimate (seconds); null if not realtime.
+  - name: on_time_flag
+    description: True when real-time arrival delay is within ±180 s; null when no valid real-time delay.
+  - name: is_realtime
+    description: Whether a real-time estimate was received.
+  - name: observation_time
+    description: Time source status was collected; may be null if not provided.
+  - name: avg_speed_kmh
+    description: Average GPS speed in last 120 s before estimated arrival, if matched.
+  - name: gps_ping_count
+    description: Count of GPS pings used in average speed (0 when none).
+  - name: is_canceled
+    description: Source cancellation flag.
+  - name: stop_index
+    description: Position of stop in the trip (loop routes may repeat stop_id).
+    tests:
+    - not_null
