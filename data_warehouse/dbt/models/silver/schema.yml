@@ -1,0 +1,121 @@
+version: 2
+
+models:
+  - name: silver_weather
+    description: "Cleaned weather observations for Tartu-Tõravere. One row = one 10-minute poll of the station, deduplicated on (station_name, observed_at)."
+    columns:
+      - name: station_name
+        description: "Weather station name."
+        tests: [not_null]
+      - name: observed_at
+        description: "Time of the agency's XML response (source_observation_time, Unix seconds). The source gives no separate measurement time; it equals our fetch time."
+        tests: [not_null]
+      - name: precipitation_mm
+        description: "Precipitation in mm over the last hour. Updated hourly, so the value repeats in the six polls of an hour; do not sum across rows."
+      - name: visibility_km
+        description: "Visibility in km. Updated hourly."
+      - name: temperature_c
+        description: "Air temperature in °C. Updated every 10 minutes."
+      - name: wind_speed_ms
+        description: "Mean wind speed in m/s. Updated every 10 minutes."
+      - name: wind_speed_max_ms
+        description: "Maximum wind gust in m/s. Updated every 10 minutes."
+      - name: weather_category
+        description: "phenomenon grouped into clear / rain / snow / fog / other. Clear = Clear, Few clouds, Variable clouds. Rain = all rain and shower values. Snow = all snowfall and snow shower values. Sleet -> ____, Hail -> ____, Glaze -> ____, Mist -> ____. Unknown or missing -> other."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['clear', 'rain', 'snow', 'fog', 'other']
+      - name: phenomenon
+        description: "Original phenomenon text from the agency, e.g. 'Heavy rain'. Kept so that Q1 can still separate heavy rain."
+
+  - name: silver_stops
+    description: "Current bus stops. One row = one stop as it appears in the latest daily stops snapshot. History is kept by the snapshot snap_stops, not here."
+    columns:
+      - name: stop_id
+        description: "Stop id from the Ridango API, e.g. '1:2816:0'."
+        tests: [unique, not_null]
+      - name: stop_code
+        description: "Public stop code (API field code)."
+      - name: stop_name
+        description: "Stop name (API field name)."
+      - name: latitude
+        description: "Latitude, WGS84 degrees."
+      - name: longitude
+        description: "Longitude, WGS84 degrees."
+      - name: district
+        description: "Always NULL: the stops API has no district field. Kept because the gold contract expects the column."
+
+  - name: silver_routes
+    description: "Current bus routes. One row = one route id (one direction) as it appears in the latest routes snapshot."
+    columns:
+      - name: route_id
+        description: "Route id from the Ridango API, e.g. '1:3_1762_1_3'. One route id = one direction."
+        tests: [unique, not_null]
+      - name: short_name
+        description: "Short public line name, e.g. the line number."
+      - name: long_name
+        description: "Full route name."
+      - name: mode
+        description: "Transport mode reported by the API."
+
+  - name: silver_stop_events
+    description: "Stop times per trip from the stop-times API. One row = one stop of one trip on one service date, as seen in one poll. Not unique per stop: gold picks the latest real-time observation per (service_date, trip_id, stop_index)."
+    columns:
+      - name: service_date
+        description: "Service day the trip belongs to. For trips running past midnight this is the day the trip started, not the calendar day of the arrival."
+        tests: [not_null]
+      - name: trip_id
+        description: "Trip id from the Ridango API."
+        tests: [not_null]
+      - name: route_id
+        description: "Route of the trip, joined from bus_trips (the stop-times API does not provide it)."
+        tests: [not_null]
+      - name: stop_id
+        description: "Stop served at this position of the trip."
+      - name: stop_index
+        description: "Position of the stop within the trip, starting from the first stop. A stop can appear twice in one trip, so this, not stop_id, identifies the row."
+        tests: [not_null]
+      - name: scheduled_arrival
+        description: "Timetable arrival time."
+        tests: [not_null]
+      - name: scheduled_departure
+        description: "Timetable departure time."
+      - name: realtime_arrival
+        description: "Predicted arrival time from the real-time feed. Only meaningful when is_realtime is true."
+      - name: realtime_departure
+        description: "Predicted departure time from the real-time feed. Only meaningful when is_realtime is true."
+      - name: arrival_delay_sec
+        description: "Predicted arrival delay in seconds, positive = late. When is_realtime is false the API reports 0, which is not a measured delay."
+      - name: departure_delay_sec
+        description: "Predicted departure delay in seconds, positive = late. Same caveat as arrival_delay_sec."
+      - name: is_realtime
+        description: "True if the API returned a real-time prediction; false = timetable only."
+      - name: is_canceled
+        description: "True if the API marks this stop call as canceled."
+      - name: observation_time
+        description: "When this stop-times response was fetched (fetched_at of the poll)."
+      - name: service_id
+        description: "Timetable service id (which calendar the trip runs on)."
+      - name: trip_headsign
+        description: "Destination text shown on the bus."
+
+  - name: silver_live_positions
+    description: "Vehicle status updates from the live feed. One row = one status update of one vehicle on one trip."
+    columns:
+      - name: trip_id
+        description: "Trip id reported by the vehicle (API field tripId). Must match the stop-times trip ids for gold to join speed."
+        tests: [not_null]
+      - name: service_date
+        description: "Service day parsed from startDate (YYYYMMDD)."
+      - name: update_time
+        description: "When the vehicle reported this status."
+        tests: [not_null]
+      - name: speed_kmh
+        description: "Vehicle speed in km/h, converted from the API's m/s (× 3.6)."
+
+  - name: silver_trips
+    description: "trip -> route lookup. One row per trip_id ever seen (old stop events still need their route)."
+    columns:
+    - name: trip_id
+      tests: [not_null, unique]
