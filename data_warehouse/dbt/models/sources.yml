@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    description: "Raw records loaded by the Airflow ingestion tasks (ingestion/loader.py). Not managed by dbt."
+    tables:
+      - name: raw_events
+        description: "One row per source record from one collector file, payload stored as JSONB. Append-only: a file that grows is loaded again under a new checksum, so the same record can appear more than once. Silver removes these duplicates."
+        columns:
+          - name: id
+            description: "Load sequence number, grows with every inserted row. Not a business key."
+          - name: source_name
+            description: "Dataset the record came from."
+            tests:
+              - accepted_values:
+                  values: ['bus_departures', 'bus_live', 'bus_routes', 'bus_stops', 'bus_trip_stop_times', 'bus_trips', 'weather']
+          - name: payload
+            description: "The collector record as JSON. Bus sources wrap the API response as {endpoint, fetched_at, payload}."
+          - name: loaded_at
+            description: "When the row was inserted into bronze."
