@@ -13,7 +13,7 @@ from ingestion.pipeline import ingest
 DBT_PROJECT_DIR = "/opt/airflow/dbt"
 LOCAL_TZ = "Europe/Tallinn"
 BUS_DATASETS = {
-    "bus_departures",
+    #"bus_departures",
     "bus_live",
     "bus_routes",
     "bus_stops",

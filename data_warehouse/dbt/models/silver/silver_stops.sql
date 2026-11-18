@@ -1,5 +1,5 @@
 -- Silver: current bus stops
--- bronze.raw_events (daily snapshot, list of stops) -> one row per stop in the LATEST snapshot.
+-- bronze.raw_events (daily snapshot, list of stops) -> one row per stop ever seen (latest version).
 -- History is kept by the gold snapshot snap_stops, not here.
 
 WITH snapshots AS (
@@ -11,30 +11,24 @@ WITH snapshots AS (
     WHERE source_name = 'bus_stops'
 ),
 
-latest AS (
-    -- only the newest snapshot: a stop missing from it counts as removed
-    SELECT *
-    FROM snapshots
-    WHERE fetched_at = (SELECT max(fetched_at) FROM snapshots)
-),
-
 stops AS (
     SELECT
         l.bronze_id,
+        l.fetched_at,
         s->>'id'             AS stop_id,
         s->>'code'           AS stop_code,
         s->>'name'           AS stop_name,
         (s->>'lat')::numeric AS latitude,
         (s->>'lon')::numeric AS longitude
-    FROM latest AS l,
+    FROM snapshots AS l,
          jsonb_array_elements(l.stops) AS s
 ),
 
 ranked AS (
-    -- a reloaded file repeats the snapshot: keep one copy per stop
+    -- keep the most recently seen version of each stop
     SELECT
         *,
-        ROW_NUMBER() OVER (PARTITION BY stop_id ORDER BY bronze_id DESC) AS copy_nr
+        ROW_NUMBER() OVER (PARTITION BY stop_id ORDER BY fetched_at DESC, bronze_id DESC) AS copy_nr
     FROM stops
     WHERE stop_id IS NOT NULL
 )
