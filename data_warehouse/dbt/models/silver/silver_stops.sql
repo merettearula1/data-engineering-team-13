@@ -39,6 +39,6 @@ SELECT
     stop_name,
     latitude,
     longitude,
-    NULL::text AS district      -- the stops API has no district
+    NULL::text AS district      -- the stops API has no district; gold dim_stop derives it from lat/lon
 FROM ranked
 WHERE copy_nr = 1

@@ -5,7 +5,7 @@ The pipeline is split into one DAG per layer, chained with Airflow Assets (each 
 | DAG | Trigger | What it does |
 |---|---|---|
 | [`tartu_bronze`](dags/tartu_bronze.py) | daily | Loads collector datasets from the public Azure Blob manifest into `bronze` |
-| [`tartu_silver`](dags/tartu_silver.py) | after `tartu_bronze` | Bronze → silver: `dbt run` + `dbt test` silver models, `dbt snapshot` stops |
+| [`tartu_silver`](dags/tartu_silver.py) | after `tartu_bronze` | Bronze → silver: `dbt seed`, `dbt run` + `dbt test` silver models, `dbt snapshot` stops |
 | [`tartu_gold`](dags/tartu_gold.py) | after `tartu_silver` | Silver → gold: `dbt run` + `dbt test` the star schema |
 
 **To run:** unpause `tartu_bronze` in the Airflow UI and trigger it. Silver and gold run automatically afterwards.
@@ -24,7 +24,7 @@ Each layer DAG updates its Asset when it succeeds, which triggers the next layer
 
 ![tartu_bronze DAG run](docs/images/tartu_bronze_dag.png)
 
-**`tartu_silver`**: build the silver models, test them, then snapshot stops (`snap_stops`) for `dim_stop`.
+**`tartu_silver`**: load the seeds (Tartu district centres), build the silver models, test them, then snapshot stops (`snap_stops`) for `dim_stop`.
 
 ![tartu_silver DAG run](docs/images/tartu_silver_dag.png)
 

@@ -44,7 +44,7 @@ models:
       - name: longitude
         description: "Longitude, WGS84 degrees."
       - name: district
-        description: "Always NULL: the stops API has no district field. Kept because the gold contract expects the column."
+        description: "Always NULL: the stops API has no district field. Gold dim_stop derives the district from the coordinates instead."
 
   - name: silver_routes
     description: "Current bus routes. One row = one route id (one direction) as it appears in the latest routes snapshot."
@@ -111,8 +111,44 @@ models:
       - name: update_time
         description: "When the vehicle reported this status."
         tests: [not_null]
+      - name: latitude
+        description: "Vehicle latitude, WGS84 degrees."
+      - name: longitude
+        description: "Vehicle longitude, WGS84 degrees."
       - name: speed_kmh
-        description: "Vehicle speed in km/h, converted from the API's m/s (× 3.6)."
+        description: "Speed reported by the API, converted from m/s (× 3.6). Unreliable (correlates only ~0.3 with the distance actually driven), so gold derives speed from distance_m instead."
+      - name: prev_update_time
+        description: "Update time of the same trip's previous ping (NULL for the first ping)."
+      - name: seconds_since_prev
+        description: "Seconds since the same trip's previous ping."
+      - name: distance_m
+        description: "Straight-line metres driven since the trip's previous ping. NULL for the first ping and for GPS jumps implying more than 100 km/h."
+
+  - name: silver_section_speeds
+    description: >
+      Running speed on the road section driven to each stop of a realtime trip, measured from the GPS track.
+      One row = one (service_date, trip_id, stop_index) whose section from the previous stop has GPS coverage.
+      The bus is taken to be at a stop while its GPS is within 50 m of it, so standing time at stops is excluded.
+    columns:
+      - name: service_date
+        tests: [not_null]
+      - name: trip_id
+        tests: [not_null]
+      - name: stop_index
+        description: "Stop the section ends at; the section starts at stop_index - 1."
+        tests: [not_null]
+      - name: departed_prev_stop_at
+        description: "Last GPS ping within 50 m of the previous stop."
+      - name: arrived_at
+        description: "First GPS ping within 50 m of this stop (actual arrival, unlike the API's forecast realtime_arrival)."
+      - name: distance_m
+        description: "GPS distance driven on the section, metres."
+      - name: driving_seconds
+        description: "Time covered by the GPS steps used, seconds."
+      - name: speed_kmh
+        description: "distance_m / driving_seconds in km/h; NULL when under 15 s of GPS coverage."
+      - name: gps_step_count
+        description: "Number of ping-to-ping GPS steps on the section."
 
   - name: silver_trips
     description: "trip -> route lookup. One row per trip_id ever seen (old stop events still need their route)."

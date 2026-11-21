@@ -18,7 +18,10 @@ with ranked_events as (
       and e.stop_index is not null
 ), events as (
     select * from ranked_events where rn = 1
-), prepared as (
+),
+-- materialized: otherwise the planner badly underestimates the rows left after the rn = 1 pick
+-- and falls back to nested-loop joins that rescan the dimensions for every event (minutes vs seconds)
+prepared as materialized (
     select
         e.*,
         coalesce(e.is_realtime, false) as has_realtime,
@@ -51,8 +54,8 @@ select
     end as on_time_flag,
     e.has_realtime as is_realtime,
     e.observation_time::timestamptz as observation_time,
-    gps.avg_speed_kmh,
-    gps.gps_ping_count,
+    gps.speed_kmh as avg_speed_kmh,
+    coalesce(gps.gps_step_count, 0) as gps_ping_count,
     e.canceled as is_canceled,
     e.stop_index::integer as stop_index
 from prepared e
@@ -74,17 +77,9 @@ left join lateral (
              fw.observed_at desc
     limit 1
 ) w on true
--- Mean GPS speed over the 120 seconds approaching predicted realtime arrival.
-left join lateral (
-    select
-        round(avg(l.speed_kmh)::numeric, 2) as avg_speed_kmh,
-        count(*)::integer as gps_ping_count
-    from {{ ref('silver_live_positions') }} l
-    where e.has_realtime
-      and e.realtime_arrival is not null
-      and l.trip_id = e.trip_id
-      and l.service_date = e.service_date
-      and l.update_time > e.realtime_arrival - interval '120 seconds'
-      and l.update_time <= e.realtime_arrival
-      and l.speed_kmh is not null
-) gps on true
+-- Running speed on the road section from the previous stop, measured from the GPS track
+-- (stop standing time excluded). See silver_section_speeds.
+left join {{ ref('silver_section_speeds') }} gps
+    on gps.service_date = e.service_date
+   and gps.trip_id = e.trip_id
+   and gps.stop_index = e.stop_index

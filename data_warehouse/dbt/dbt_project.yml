@@ -6,6 +6,7 @@ profile: tartu_transit
 model-paths: ["models"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
+seed-paths: ["seeds"]
 test-paths: ["tests"]
 
 models:
@@ -22,3 +23,7 @@ models:
       +schema: gold
       +materialized: table
       
+
+seeds:
+  tartu_transit:
+    +schema: silver

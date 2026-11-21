@@ -1,6 +1,7 @@
 """Silver layer: transform bronze raw events into cleaned silver views with dbt.
 
 Triggered automatically whenever `tartu_bronze` finishes successfully.
+Loads the dbt seeds (reference data such as Tartu district centres) first.
 Also takes the `snap_stops` snapshot (SCD2 history of silver_stops), which gold's dim_stop needs.
 """
 import sys
@@ -23,6 +24,10 @@ with DAG(
     tags=["tartu", "silver", "dbt"],
 ) as dag:
 
+    dbt_seed = BashOperator(
+        task_id="dbt_seed",
+        bash_command=dbt("seed"),
+    )
     dbt_run_silver = BashOperator(
         task_id="dbt_run_silver",
         bash_command=dbt("run", "--select path:models/silver"),
@@ -38,4 +43,4 @@ with DAG(
         outlets=[SILVER_ASSET],
     )
 
-    dbt_run_silver >> dbt_test_silver >> dbt_snapshot_stops
+    dbt_seed >> dbt_run_silver >> dbt_test_silver >> dbt_snapshot_stops
