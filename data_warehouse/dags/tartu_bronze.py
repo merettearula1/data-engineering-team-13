@@ -1,19 +1,17 @@
-"""Load bus and weather data, validate, then run dbt transformations."""
+"""Bronze layer: ingest raw bus and weather files into the warehouse `bronze` schema."""
 import sys
+from pathlib import Path
 sys.path.insert(0, "/opt/airflow")
+sys.path.insert(0, str(Path(__file__).parent))  # for tartu_common
 
 import pendulum
-from airflow import DAG
-from airflow.decorators import task
-from airflow.models.param import Param
-from airflow.operators.bash import BashOperator
+from airflow.sdk import DAG, Param, task
 
 from ingestion.pipeline import ingest
+from tartu_common import BRONZE_ASSET, LOCAL_TZ
 
-DBT_PROJECT_DIR = "/opt/airflow/dbt"
-LOCAL_TZ = "Europe/Tallinn"
 BUS_DATASETS = {
-    #"bus_departures",
+    # "bus_departures",
     "bus_live",
     "bus_routes",
     "bus_stops",
@@ -23,8 +21,8 @@ BUS_DATASETS = {
 
 
 with DAG(
-    dag_id="tartu_transit_pipeline",
-    description="Ingest public bus and weather files into the warehouse",
+    dag_id="tartu_bronze",
+    description="Ingest public bus and weather files into the bronze schema",
     schedule="@daily",
     start_date=pendulum.datetime(2026, 11, 1, tz=LOCAL_TZ),
     catchup=False,
@@ -35,7 +33,7 @@ with DAG(
             description="Load data from this date onwards (YYYY-MM-DD). Empty = today and yesterday.",
         ),
     },
-    tags=["tartu", "bronze", "dbt"],
+    tags=["tartu", "bronze"],
 ) as dag:
 
     @task
@@ -57,9 +55,9 @@ with DAG(
     def ingest_bus(date_range: tuple[str, str | None]) -> dict:
         return ingest(start_date=date_range[0], end_date=date_range[1], datasets=BUS_DATASETS)
 
-    @task
+    @task(outlets=[BRONZE_ASSET])
     def dq_check_bronze(weather: dict, bus: dict) -> None:
-        """Make the ingestion quality result visible as its own DAG task."""
+        """Fail if nothing was found; on success, signal the silver DAG via the bronze Asset."""
         processed_files = sum(
             result["loaded_files"] + result["skipped_files"]
             for result in (weather, bus)
@@ -68,18 +66,5 @@ with DAG(
             raise ValueError("Data-quality check failed: no bus or weather files found")
         print(f"Data-quality check passed: {weather=}, {bus=}")
 
-    dbt_run = BashOperator(
-        task_id="dbt_run",
-        bash_command=f"dbt run --project-dir {DBT_PROJECT_DIR}",
-    )
-
-    dbt_test = BashOperator(
-        task_id="dbt_test",
-        bash_command=f"dbt test --project-dir {DBT_PROJECT_DIR}",
-    )
-
     date_range = resolve_date_range()
-    weather = ingest_weather(date_range)
-    bus = ingest_bus(date_range)
-    check = dq_check_bronze(weather, bus)
-    [weather, bus] >> check >> dbt_run >> dbt_test
+    dq_check_bronze(ingest_weather(date_range), ingest_bus(date_range))
