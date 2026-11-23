@@ -10,14 +10,9 @@ test-paths: ["tests"]
 
 models:
   tartu_transit:
-    setup_check:
-      +schema: silver
-      +materialized: view
-
     silver:
       +schema: silver
       +materialized: view
-
     gold:
       +schema: gold
       +materialized: table
