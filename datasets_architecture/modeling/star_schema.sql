@@ -52,7 +52,7 @@ CREATE TABLE fact_weather (
     wind_speed_ms      NUMERIC(5,2),
     wind_speed_max_ms  NUMERIC(5,2),
     weather_category   VARCHAR(20)   NOT NULL,  -- derived from 'phenomenon': clear / rain / snow / fog / other
-    phenomen           VARCHAR(20)              -- kept to store the raw value
+    phenomenon          VARCHAR(20)              -- kept to store the raw value
     UNIQUE (station_name, observed_at)
 );
 CREATE INDEX ix_weather_date_time ON fact_weather (date_key, time_key);

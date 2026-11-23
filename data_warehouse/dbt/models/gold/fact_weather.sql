@@ -23,5 +23,5 @@ select
     wind_speed_ms::numeric as wind_speed_ms,
     wind_speed_max_ms::numeric as wind_speed_max_ms,
     coalesce(weather_category::text, 'other') as weather_category,
-    phenomen::text as phenomen
+    phenomenon::text as phenomenon
 from weather
