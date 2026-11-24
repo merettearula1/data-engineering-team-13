@@ -1,7 +1,42 @@
 # Airflow data warehouse
 
-The [`tartu_transit_pipeline`](dags/tartu_transit_pipeline.py) DAG loads collector datasets from the public Azure
-Blob manifest into PostgreSQL, then runs the dbt models.
+The pipeline is split into one DAG per layer, chained with Airflow Assets (each DAG starts when the previous one succeeds):
+
+| DAG | Trigger | What it does |
+|---|---|---|
+| [`tartu_bronze`](dags/tartu_bronze.py) | daily | Loads collector datasets from the public Azure Blob manifest into `bronze` |
+| [`tartu_silver`](dags/tartu_silver.py) | after `tartu_bronze` | Bronze → silver: `dbt seed`, `dbt run` + `dbt test` silver models, `dbt snapshot` stops |
+| [`tartu_gold`](dags/tartu_gold.py) | after `tartu_silver` | Silver → gold: `dbt run` + `dbt test` the star schema |
+
+**To run:** unpause `tartu_bronze` in the Airflow UI and trigger it. Silver and gold run automatically afterwards.
+`tartu_silver` and `tartu_gold` are created unpaused. If they show as paused (for example on an older Airflow
+database), unpause them first, otherwise bronze finishes and nothing runs after it.
+
+### DAG chain (Airflow Assets)
+
+Each layer DAG updates its Asset when it succeeds, which triggers the next layer:
+
+![Bronze, silver and gold DAGs chained through Airflow Assets](docs/images/bronze_silver_gold.png)
+
+### Airflow DAG runs
+
+**`tartu_bronze`**: resolve the date range, ingest weather and bus files, run the data-quality check.
+
+![tartu_bronze DAG run](docs/images/tartu_bronze_dag.png)
+
+**`tartu_silver`**: load the seeds (Tartu district centres), build the silver models, test them, then snapshot stops (`snap_stops`) for `dim_stop`.
+
+![tartu_silver DAG run](docs/images/tartu_silver_dag.png)
+
+**`tartu_gold`**: build the gold star schema, then run the gold schema tests and singular tests.
+
+![tartu_gold DAG run](docs/images/tartu_gold_dag.png)
+
+### dbt model dependencies
+
+Lineage from `dbt docs generate`: `bronze.raw_events` → silver models → `snap_stops` → gold dimensions and facts → singular tests.
+
+![dbt lineage diagram](docs/images/dbt_lineage_diagram.png)
 
 ### Ingestion code description:
 

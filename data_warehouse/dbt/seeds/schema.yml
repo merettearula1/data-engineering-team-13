@@ -1,0 +1,18 @@
+version: 2
+
+seeds:
+  - name: tartu_district_centres
+    description: >
+      Approximate centre point of each of Tartu's 17 city districts (linnaosad), hand-placed from the map.
+      Used by dim_stop to assign every stop to its nearest district centre. This is an approximation:
+      stops near a district border can land in the neighbouring district.
+    columns:
+      - name: district
+        description: District name (Estonian).
+        data_tests:
+          - unique
+          - not_null
+      - name: latitude
+        description: Approximate district centre latitude, WGS84 degrees.
+      - name: longitude
+        description: Approximate district centre longitude, WGS84 degrees.

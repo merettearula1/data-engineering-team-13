@@ -1,50 +1,41 @@
 -- =====================================================================
 -- Q1: On which bus lines is the average delay (in seconds) greatest during adverse weather conditions (weather phenomena) or heavy rainfall compared to clear weather?
 -- =====================================================================
--- Categorises official Estonian weather phenomena into Heavy/Adverse vs Baseline (Clear/Light clouds).
+-- Builds on the Silver layer (silver_weather), which already maps the raw Estonian Weather Service
+-- 'phenomenon' text into weather_category:
+--   clear = Clear, Few clouds, Variable clouds
+--   rain  = Light/Moderate/Heavy rain, Light/Moderate/Heavy shower
+--   snow  = Light/Moderate/Heavy snowfall, Light/Moderate/Heavy snow shower
+--   fog   = Fog
+--   other = Overcast, Cloudy with clear spells, sleet, hail, glaze, mist, unknown/NULL
+-- Only weather_category reaches fact_weather (the raw phenomenon text does not), so "heavy" rain
+-- is identified by measured precipitation instead of the phenomenon name.
 -- ---------------------------------------------------------------------
 WITH weather_phenomena_classified AS (
     SELECT
         weather_key,
         weather_category,
         precipitation_mm,
-        
-        -- Mapping official Estonian Estonian/English weather phenomena
-        CASE 
-            -- GROUP 1: Heavy Rain & High-Intensity Showers
-            WHEN weather_category IN ('Heavy rain', 'Heavy shower', 'Tugev vihm', 'Tugev hoovihm')
-              OR precipitation_mm >= 2.5
+
+        CASE
+            -- GROUP 1: Heavy Rain & High-Intensity Showers (rain category with >= 2.5 mm precipitation)
+            WHEN weather_category = 'rain'
+             AND precipitation_mm >= 2.5
             THEN 'Heavy Rain / Heavy Shower'
-            
-            -- GROUP 2: General Adverse Weather: Snow, Sleet, Glaze/Ice, Fog, Hail, Rain
-            WHEN weather_category IN (
-                -- Winter Conditions: Snow, Sleet & Hail
-                'Light snow shower', 'Moderate snow shower', 'Heavy snow shower',
-                'Nõrk hooglumi', 'Mõõdukas hooglumi', 'Tugev hooglumi',
-                'Light snowfall', 'Moderate snowfall', 'Heavy snowfall',
-                'Nõrk lumesadu', 'Mõõdukas lumesadu', 'Tugev lumesadu',
-                'Light sleet', 'Moderate sleet', 'Nõrk lörtsisadu', 'Mõõdukas lörtsisadu',
-                -- Visibility & Road Surface Hazards: Ice, Glaze & Fog
-                'Glaze', 'Jäide', 'Fog', 'Udu', 'Mist', 'Uduvine', 'Hail', 'Rahe',
-                
-                -- Standard / Moderate Rain & Light Showers
-                'Light rain', 'Moderate rain', 'Nõrk vihm', 'Mõõdukas vihm',
-                'Light shower', 'Moderate shower', 'Nõrk hoovihm', 'Mõõdukas hoovihm'
-            )
-            THEN 'Adverse Weather (Snow/Fog/Ice/Rain)'
-            
-            -- GROUP 3: Clear / Ideal Operating Conditions (Baseline)
-            WHEN weather_category IN (
-                'Clear', 'Selge', 
-                'Few clouds', 'Vähene pilvisus', 
-                'Variable clouds', 'Poolpilves'
-            )
-            AND (precipitation_mm IS NULL OR precipitation_mm < 0.1)
+
+            -- GROUP 2: General Adverse Weather: remaining rain/showers, snowfall/snow showers, fog
+            WHEN weather_category IN ('rain', 'snow', 'fog')
+            THEN 'Adverse Weather (Rain/Snow/Fog)'
+
+            -- GROUP 3: Clear / Ideal Operating Conditions (Baseline): clear category without measurable precipitation
+            WHEN weather_category = 'clear'
+             AND (precipitation_mm IS NULL OR precipitation_mm < 0.1)
             THEN 'Clear / Good Weather'
-            -- FALLBACK GROUP: Overcast, general cloudiness, or uncategorized weather events.
+
+            -- FALLBACK GROUP: Overcast, cloudy, sleet, hail, glaze, mist or uncategorized weather events.
             ELSE 'Overcast / Other'
         END AS weather_condition_group
-    FROM dwh.dim_weather
+    FROM dwh.fact_weather
 ),
 
 -- ---------------------------------------------------------------------
@@ -77,7 +68,7 @@ line_weather_performance AS (
     -- Restrict to our 3 core comparison buckets, excluding 'Overcast / Other'.
       AND w.weather_condition_group IN (
           'Heavy Rain / Heavy Shower', 
-          'Adverse Weather (Snow/Fog/Ice/Rain)', 
+          'Adverse Weather (Rain/Snow/Fog)', 
           'Clear / Good Weather'
       )
 
@@ -103,7 +94,7 @@ SELECT
     MAX(CASE WHEN weather_condition_group = 'Heavy Rain / Heavy Shower' 
              THEN avg_arrival_delay_sec END) AS avg_delay_heavy_rain_sec,
              
-    MAX(CASE WHEN weather_condition_group = 'Adverse Weather (Snow/Fog/Ice/Rain)' 
+    MAX(CASE WHEN weather_condition_group = 'Adverse Weather (Rain/Snow/Fog)' 
              THEN avg_arrival_delay_sec END) AS avg_delay_adverse_sec,
     
     -- Delta: delay under heavy rainfall - delay under good weather
@@ -161,7 +152,7 @@ SELECT
     COUNT(*) FILTER (WHERE f.arrival_delay_sec > 180) AS late_arrivals_count,
 
 -- 2. LATE ARRIVAL FREQUENCY (%): Percentage of arrivals that were strictly late, i.e. > 3 minutes (180 seconds)
-    ROUND(100.0 * COUNT(*) FILTER (WHERE f.arrival_delay_sec > 180) / COUNT(*), 2) AS late_arrival_pct,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE f.arrival_delay_sec > 180) / COUNT(*), 2) AS late_arrival_pct
   
 -- Joining the fact table and dimension table by shared key 'route_key'  
 FROM dwh.fact_bus_performance f
@@ -331,17 +322,19 @@ ORDER BY avg_arrival_delay_sec DESC;
 -- =====================================================================
 -- Q4: Which districts (or areas around stops) experience the greatest schedule deviations due to bad weather?
 -- =====================================================================
--- Approach: compare each district's deviation in BAD weather against its own CLEAR weather baseline.
---   - Bad weather = weather_category IN ('rain', 'snow', 'fog'); baseline = 'clear'; 'other' is excluded.
+-- Approach: compare each district's deviation in BAD weather against its own BASELINE weather.
+--   - Bad weather = weather_category IN ('rain', 'snow', 'fog').
+--   - Baseline = 'other' (overcast / cloudy): the data collected so far contains no real-time arrivals
+--     in 'clear' weather, so overcast is used as the comparison baseline.
 --   - Deviation = AVG(ABS(arrival_delay_sec)): early and late both count as deviating from the schedule.
---   - District comes from dim_stop (SCD Type 2): the fact row's stop_key already points to the stop
---     version valid at event time, so no is_current filter is needed.
+--   - District comes from dim_stop (SCD Type 2), derived from the stop's nearest Tartu district centre;
+--     the fact row's stop_key already points to the stop version valid at event time.
 -- ---------------------------------------------------------------------
 WITH stop_events_weather AS (
     SELECT
         s.district,
         CASE
-            WHEN w.weather_category = 'clear'                  THEN 'clear'
+            WHEN w.weather_category = 'other'                  THEN 'baseline'
             WHEN w.weather_category IN ('rain', 'snow', 'fog') THEN 'bad'
         END AS weather_group,
         f.arrival_delay_sec,
@@ -353,7 +346,6 @@ WITH stop_events_weather AS (
       ON f.weather_key = w.weather_key
     WHERE f.is_realtime = TRUE
       AND f.is_canceled = FALSE
-      AND s.district IS NOT NULL
 ),
 
 -- ---------------------------------------------------------------------
@@ -364,11 +356,10 @@ district_weather AS (
         district,
         weather_group,
         COUNT(*) AS total_stop_observations,
-        AVG(arrival_delay_sec) AS avg_arrival_delay_sec,
         AVG(ABS(arrival_delay_sec)) AS avg_abs_deviation_sec,
         100.0 * COUNT(*) FILTER (WHERE on_time_flag = FALSE) / COUNT(*) AS disruption_rate_pct
     FROM stop_events_weather
-    -- Drops the 'other' weather category (weather_group is NULL)
+    -- Drops weather categories outside the two groups (e.g. 'clear')
     WHERE weather_group IS NOT NULL
     GROUP BY district, weather_group
     -- At least 30 observations per district and weather group
@@ -376,37 +367,29 @@ district_weather AS (
 )
 
 -- ---------------------------------------------------------------------
--- Pivot to one row per district: clear baseline vs bad weather side by side.
+-- Pivot to one row per district: baseline vs bad weather side by side.
 -- ---------------------------------------------------------------------
 SELECT
     district,
 
-    MAX(total_stop_observations) FILTER (WHERE weather_group = 'clear') AS obs_clear,
-    MAX(total_stop_observations) FILTER (WHERE weather_group = 'bad')   AS obs_bad_weather,
+    MAX(total_stop_observations) FILTER (WHERE weather_group = 'baseline') AS obs_baseline,
+    MAX(total_stop_observations) FILTER (WHERE weather_group = 'bad')      AS obs_bad_weather,
 
 -- Average absolute schedule deviation (seconds)
-    ROUND(MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'clear'), 2) AS abs_deviation_clear_sec,
-    ROUND(MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'bad'),   2) AS abs_deviation_bad_sec,
+    ROUND(MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'baseline'), 2) AS abs_deviation_baseline_sec,
+    ROUND(MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'bad'),      2) AS abs_deviation_bad_sec,
 
--- "Bad weather penalty": extra deviation in bad weather over the district's own clear baseline
-    ROUND(
-        MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'bad') -
-        MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'clear'),
-        2
-    ) AS bad_weather_penalty_sec,
+-- "Bad weather penalty": extra deviation in bad weather over the district's own baseline
+    ROUND(MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'bad') -
+          MAX(avg_abs_deviation_sec) FILTER (WHERE weather_group = 'baseline'), 2) AS bad_weather_penalty_sec,
 
--- Disruption rate (%) and its increase in percentage points
-    ROUND(MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'clear'), 2) AS disruption_pct_clear,
-    ROUND(MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'bad'),   2) AS disruption_pct_bad,
-    ROUND(
-        MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'bad') -
-        MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'clear'),
-        2
-    ) AS disruption_increase_pp
+-- Disruption rate (%)
+    ROUND(MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'baseline'), 2) AS disruption_pct_baseline,
+    ROUND(MAX(disruption_rate_pct) FILTER (WHERE weather_group = 'bad'),      2) AS disruption_pct_bad
 
 FROM district_weather
 GROUP BY district
--- Keep only districts that have BOTH a clear and a bad weather group (otherwise no comparison is possible)
+-- Keep only districts that have BOTH a baseline and a bad weather group (otherwise no comparison is possible)
 HAVING COUNT(*) = 2
 -- Districts where bad weather adds the most deviation first
 ORDER BY bad_weather_penalty_sec DESC;
@@ -415,8 +398,9 @@ ORDER BY bad_weather_penalty_sec DESC;
 -- Q5: To what extent do difficult road sections and weather conditions (e.g., snowfall or rain)
 --     slow down traffic in a specific city district or between stops?
 -- =====================================================================
--- Measure: avg_speed_kmh = mean GPS speed during the 120 s before the bus arrived at the stop,
---   i.e. the speed on the approach to that stop.
+-- Measure: avg_speed_kmh = running speed on the road section from the previous stop to this stop:
+--   GPS distance driven / time between leaving the previous stop and reaching this one (bus within 50 m
+--   of a stop = at the stop), so standing time at stops is excluded.
 -- Slowdown (%) = 100 * (1 - speed in rain or snow / speed in clear weather).
 -- ---------------------------------------------------------------------
 -- PART 1: Speed by district and weather condition
@@ -435,7 +419,7 @@ WITH district_speed AS (
       ON f.weather_key = w.weather_key
     WHERE f.is_realtime = TRUE
       AND f.is_canceled = FALSE
-      -- Speed is only available when GPS pings were matched in the 120 s window
+      -- Speed is only available when the GPS track passed both this and the previous stop
       AND f.avg_speed_kmh IS NOT NULL
       AND s.district IS NOT NULL
       AND w.weather_category IN ('clear', 'rain', 'snow')

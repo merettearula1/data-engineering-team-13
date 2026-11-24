@@ -91,7 +91,11 @@ models:
   - name: longitude
     description: Stop longitude during the version.
   - name: district
-    description: District if supplied or derived upstream.
+    description: >
+      Tartu district of the stop's nearest district centre (seed tartu_district_centres),
+      or 'Outside Tartu' when no centre is within 2.5 km. Approximate near district borders.
+    data_tests:
+      - not_null
   - name: valid_from
     description: Inclusive version start timestamp.
   - name: valid_to
@@ -209,9 +213,14 @@ models:
   - name: observation_time
     description: Time source status was collected; may be null if not provided.
   - name: avg_speed_kmh
-    description: Average GPS speed in last 120 s before estimated arrival, if matched.
+    description: >
+      Running speed (km/h) on the road section from the previous stop to this stop: GPS distance
+      driven divided by time between the bus leaving the previous stop (last GPS ping within 50 m of it)
+      and reaching this stop (first ping within 50 m), so standing time at the stops is excluded.
+      NULL for a trip's first stop, when the GPS track did not pass within 50 m of either stop,
+      or when it covers less than 15 s of the section.
   - name: gps_ping_count
-    description: Count of GPS pings used in average speed (0 when none).
+    description: Count of GPS ping-to-ping steps used for avg_speed_kmh (0 when none).
   - name: is_canceled
     description: Source cancellation flag.
   - name: stop_index
