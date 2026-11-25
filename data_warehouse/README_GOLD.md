@@ -1,81 +1,128 @@
-# Tartu Transit Analytics — task 2.3 Transformation (dbt)
+# Tartu Transit Analytics — Gold layer (dbt, Project 2 task 2.3)
 
-- Active dbt project: **`data_warehouse/dbt/`**, dbt package name `tartu_transit`, profile `tartu_transit`.
-- Existing `generate_schema_name.sql` maps `schema='gold'` to physical PostgreSQL schema `gold`, without `public_` prefix.
-- Existing Airflow DAG calls dbt with `--project-dir /opt/airflow/dbt`, uses Docker venv PATH and `WAREHOUSE_*` credentials, and loads to `bronze.raw_events`.
-- There is **no completed `models/silver/` directory in this ZIP**. Missing Silver `ref()` calls will block `dbt parse`/`dbt build` until their models are merged.
+The Gold layer turns cleaned **Silver** data into a star schema for analysing bus punctuality, driving speed and weather in Tartu. It is part of the `tartu_transit` dbt project, located in [`data_warehouse/dbt/`](dbt/).
 
-## Files and design
+**Current implementation:** The Silver and Gold models, stop-history snapshot, tests and three Airflow DAGs are in the repository. This README documents the implementation and how to verify it.
+
+## 1. Data flow
 
 ```text
-data_warehouse/dbt/
-  models/gold/
-    dim_date.sql
-    dim_time.sql
-    dim_route.sql
-    dim_trip.sql
-    dim_stop.sql
-    fact_weather.sql
-    fact_bus_performance.sql
-    schema.yml
-  snapshots/snap_stops.sql
-  tests/*.sql
-  docs/SILVER_HANDOFF.md
-  docs/AIRFLOW_HANDOFF.md
-  docs/VERIFY_IN_PGADMIN.sql
-optional_airflow/tartu_transit_pipeline.py     # DO NOT copy if not necessary
+Ridango bus data + Estonian Weather Service
+                 |
+     tartu_bronze (Airflow)
+                 |
+       bronze.raw_events (JSONB)
+                 |
+     tartu_silver (Airflow)
+       dbt seed -> dbt run Silver -> dbt test Silver
+                  -> dbt snapshot snap_stops
+                 |
+     silver views/tables + history.snap_stops
+                 |
+      tartu_gold (Airflow)
+       dbt run Gold -> dbt test Gold
+                 |
+      gold dimensions and facts
 ```
 
-The existing `dbt_project.yml`, `profiles.yml` and schema macro are compatible as-is: do not overwrite them. The individual model `config()` clauses set materialization=`table`, schema=`gold`.
+The three DAGs use **Airflow Assets**: a successful upstream DAG triggers the next one. The Silver DAG runs the `snap_stops` snapshot before Gold builds `dim_stop`. See [`dags/tartu_bronze.py`](dags/tartu_bronze.py), [`dags/tartu_silver.py`](dags/tartu_silver.py) and [`dags/tartu_gold.py`](dags/tartu_gold.py). The overall setup is documented in [`README.md`](README.md).
 
-**Facts and grain:**
-- `fact_bus_performance`: exactly 1 `(service_date, trip_id, stop_index)`; trip-stop event is deduplicated to latest eligible observation. Source delay may be a real-time *prediction*, not an observed arrival.
-- `fact_weather`: exactly 1 `(station_name, observed_at)` source observation timestamp.
+## 2. Gold star schema
 
-**Dimensions:** `dim_date`, `dim_time`, `dim_route` (Type 1), `dim_trip` (Type 1), `dim_stop` (Type 2 via dbt snapshot).
+**Fact tables (grain = what one row represents)**
 
-**Documented differences from Project 1**: stable MD5 text surrogate keys in place of SERIAL integer keys for route/trip/stop/weather/bus fact; weather matched to nearest ±60min Tartu-Tõravere reading; fixed-only holiday flags; full-refresh models (not yet optimized for large live history).
+| Table | Grain | Main information |
+|---|---|---|
+| `gold.fact_bus_performance` | One **service date × trip ID × stop index** | Scheduled and predicted arrival times, predicted delay, on-time flag, driving speed and links to route/stop/weather |
+| `gold.fact_weather` | One **station × observation timestamp** | Temperature, precipitation, wind, visibility and weather phenomenon/category |
 
-## Windows VS Code terminal
+The stop **index** is part of the bus fact grain because a circular route can visit the same stop more than once on one trip. Repeated source observations are ranked, with real-time estimates preferred and then the latest observation chosen.
 
-1. `git pull`, then `git switch -c feature/gold-dbt-schema` in the existing repo. Keep main branch unchanged.
-2. copy/merge `data_warehouse/dbt/` into the same folder in the cloned Git repository. No `.env` or passwords are included.
-3. Open `data_warehouse/dbt/docs/SILVER_HANDOFF.md` and confirm Silver names and columns. Contracted dbt models: `silver_routes`, `silver_stops`, `silver_stop_events`, `silver_weather`, `silver_live_positions`.
-4. When Silver models are merged, start Docker (from `data_warehouse/`): `docker compose up -d --build`.
-5. From inside `data_warehouse/` run:
+**Dimensions**
 
-   ```powershell
-   docker compose exec airflow-scheduler dbt debug --project-dir /opt/airflow/dbt
-   docker compose exec airflow-scheduler dbt parse --project-dir /opt/airflow/dbt
-   docker compose exec airflow-scheduler dbt run --project-dir /opt/airflow/dbt --select path:models/silver
-   docker compose exec airflow-scheduler dbt snapshot --project-dir /opt/airflow/dbt --select snap_stops
-   docker compose exec airflow-scheduler dbt build --project-dir /opt/airflow/dbt --select path:models/gold
-   ```
+| Table | Description |
+|---|---|
+| `gold.dim_date` | Calendar date, weekday, weekend and fixed-holiday flag |
+| `gold.dim_time` | Minute of day and peak-hour/day-part labels (1,440 rows) |
+| `gold.dim_route` | Bus route and direction metadata (Type 1: latest details) |
+| `gold.dim_trip` | Trip and destination metadata (Type 1: latest details) |
+| `gold.dim_stop` | Bus stop names, coordinates and historical versions (Type 2) |
 
-   There is **no reason to run these last three now** if the Silver models is not included yet. The first two also need correct dbt references, so `dbt parse` is expected to report missing models until Silver is merged. No Gold tables have been created yet.
+`dim_stop` is created from [`dbt/snapshots/snap_stops.sql`](dbt/snapshots/snap_stops.sql). The snapshot stores versions in the `history` schema when stop attributes change. `dim_stop` also estimates a district using the nearest centre from the dbt seed `tartu_district_centres`; stops more than 2.5 km from every centre are labelled `Outside Tartu`. District labels are approximate, especially near boundaries.
 
-6. Validate row counts and keys with `data_warehouse/dbt/docs/VERIFY_IN_PGADMIN.sql`, and inspect dbt results. `dbt build` runs model tests as part of the build
-7. From Airflow - update the DAG sequence per `docs/AIRFLOW_HANDOFF.md` (the optional edited DAG is included). This is needed for task 2.4, not needed to write the 2.3 models
-8. When validation works, in repo root:
+The model SQL lives in [`dbt/models/gold/`](dbt/models/gold/) and its field descriptions and standard tests in [`dbt/models/gold/schema.yml`](dbt/models/gold/schema.yml).
 
-   ```powershell
-   git status
-   git add data_warehouse/dbt
-   git commit -m "Implement Gold star schema, snapshot, tests and docs"
-   git push -u origin feature/gold-dbt-schema
-   ```
+### Calculations and joins
 
-   Open a PR (Pull Request) and share the Silver model contract and Airflow integration doc
+- **Predicted punctuality:** `on_time_flag = true` when the API's real-time arrival-delay estimate is between **−180 and +180 seconds**. Timetable-only rows have NULL delay/on-time measures, not a misleading zero-minute delay. These are **predictions**, not independently observed actual arrivals.
+- **Weather match:** the bus fact links to the nearest `Tartu-Tõravere` weather observation within **60 minutes** of its event time; if none exists, `weather_key` is NULL.
+- **Driving speed:** `silver_section_speeds` derives speed from GPS distance and elapsed driving time **between consecutive stops**, excluding standing time at the stops. A speed is available only when GPS coverage is sufficient; it is not simply the API-reported instantaneous speed. The result appears in `fact_bus_performance.avg_speed_kmh`.
+- **Time zone:** date/time keys use `Europe/Tallinn`. Keys for routes, trips, weather and bus facts are deterministic MD5 text keys (not PostgreSQL `SERIAL` IDs).
+- **Dependencies:** `{{ ref('silver_stop_events') }}`, `{{ ref('silver_weather') }}`, other Silver `ref()` calls, snapshot references and references between Gold models let dbt determine the build order.
 
-## dbt commands explained simply
+## 3. Input models
 
-- `dbt run`: executes model SQL and creates PostgreSQL tables or views.
-- `dbt snapshot`: records changed stop attributes with valid-from / valid-to history.
-- `dbt build`: builds selected models and executes their declared tests.
-- `ref('silver_weather')`: tells dbt to read that named Silver model and records a dependency in the DAG. If it does not exist, dbt stops, rather than silently using unrelated data.
+The Gold models read these existing upstream dbt models:
 
-## Limitations and open dependencies
+| Upstream model | Used for |
+|---|---|
+| `silver_routes` | `dim_route` |
+| `silver_stop_events` (built using `silver_trips`) | `dim_trip`, bus performance and trip/route/stop matching |
+| `silver_stops` | `snap_stops` stop-history snapshot |
+| `silver_weather` | `fact_weather` |
+| `silver_section_speeds` (built using `silver_live_positions`) | GPS-based road-section speed in bus performance |
+| `tartu_district_centres` (dbt seed) | Approximate districts in `dim_stop` |
 
-This patch was checked statically for YAML syntax, SQL file presence and `ref()` graph, but **cannot be run end-to-end without actual Silver outputs and a running project's PostgreSQL instance**. Currently no production data or Silver models. The Gold model assumptions are documented in `docs/SILVER_HANDOFF.md`.
+## 4. Running the pipeline
 
-Stop-history timestamps reflect **when dbt noticed a change**, not necessarily when the bus stop physically changed. Validate the source data's history before claiming precise historical stop positions. Distinguish real-time predictions from actual arrival records in the final project report.
+### Through Airflow (normal workflow)
+
+From `data_warehouse/` in a terminal, start the containers:
+
+```powershell
+docker compose up -d --build
+docker compose ps
+```
+
+Open **Airflow at <http://localhost:8080>**. Ensure `tartu_silver` and `tartu_gold` are unpaused, then enable/trigger `tartu_bronze`. On success, Airflow automatically runs Silver and then Gold.
+
+### Manual dbt verification (Windows PowerShell)
+
+Run these commands **from `data_warehouse/`**, with Docker running. dbt is installed inside the Airflow container, not necessarily on Windows:
+
+```powershell
+# Connection and dbt model configuration
+docker compose exec airflow-scheduler /opt/airflow/dbt_venv/bin/dbt debug --project-dir /opt/airflow/dbt
+docker compose exec airflow-scheduler /opt/airflow/dbt_venv/bin/dbt parse --project-dir /opt/airflow/dbt
+
+# Same essential build order as the layered Airflow DAGs
+docker compose exec airflow-scheduler /opt/airflow/dbt_venv/bin/dbt seed --project-dir /opt/airflow/dbt
+docker compose exec airflow-scheduler /opt/airflow/dbt_venv/bin/dbt run --project-dir /opt/airflow/dbt --select path:models/silver
+docker compose exec airflow-scheduler /opt/airflow/dbt_venv/bin/dbt test --project-dir /opt/airflow/dbt --select path:models/silver --indirect-selection cautious
+docker compose exec airflow-scheduler /opt/airflow/dbt_venv/bin/dbt snapshot --project-dir /opt/airflow/dbt --select snap_stops
+docker compose exec airflow-scheduler /opt/airflow/dbt_venv/bin/dbt run --project-dir /opt/airflow/dbt --select path:models/gold
+docker compose exec airflow-scheduler /opt/airflow/dbt_venv/bin/dbt test --project-dir /opt/airflow/dbt --select path:models/gold
+```
+
+**Do not run the manual build at the same time as the Airflow DAGs** against the same database. dbt's project and profile live in `dbt/dbt_project.yml` and `dbt/profiles.yml`; Docker Compose supplies the `WAREHOUSE_*` connection environment variables. Do not commit `.env` or passwords.
+
+## 5. Validation and documentation
+
+- `schema.yml` defines model and column descriptions plus tests such as `not_null`, `unique` and `relationships`.
+- Custom SQL data-quality checks are in [`dbt/tests/`](dbt/tests/) (including fact grain, linked keys, schedule-only delay handling, on-time threshold, stop-version overlap and weather-date validity).
+- After a successful build, run selected checks in PostgreSQL using [`docs/VERIFY_IN_PGADMIN.sql`](docs/VERIFY_IN_PGADMIN.sql). Open **pgAdmin at <http://localhost:5050>**, connect to the `warehouse` database and use the Query Tool.
+- The overall [`README.md`](README.md) contains Airflow DAG screenshots and a dbt lineage diagram. dbt documentation can also be generated with `dbt docs generate` when the project can connect to its database.
+
+**Suggested checks:** inspect fact/dimension row counts; verify no duplicate `(date_key, trip_key, stop_index)` values; check missing foreign keys and weather matches; and calculate predicted on-time percentage **only** for rows with a non-NULL `on_time_flag`.
+
+## 6. Changes from Project 1 and limitations
+
+- The star schema retains **two facts and five dimensions**, but uses reproducible MD5 text keys rather than `SERIAL` keys for several tables.
+- Bus delay is an **API real-time prediction**; we cannot claim verified actual arrival punctuality from it.
+- Speed is inferred from eligible GPS track segments between stops; missing or incomplete GPS coverage means speed can be NULL.
+- Weather is matched by nearest station observation within ±60 minutes, not by direct measurement at each bus stop.
+- The date dimension's holiday flag includes fixed holidays only; moving holidays are not covered.
+- The stop-history snapshot records **when dbt detects changed details**, which may differ from the physical time of a stop change.
+- Gold SQL models are currently **full-refresh tables**, rather than incremental models optimized for very large datasets.
+
+For how to start the full infrastructure and Airflow pipeline, see the main [`data_warehouse/README.md`](README.md).
