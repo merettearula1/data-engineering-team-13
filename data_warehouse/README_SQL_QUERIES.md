@@ -10,7 +10,7 @@ group by source_name
 order by source_name;
 ```
 
-![Check 1](data_warehouse/images_sql/check_1.png)
+![Check 1](images_sql/check_1.png)
 
 ### 2. Payload Structure Inspection
 Samples the latest raw JSON records across transit and weather feeds (_bus_live_, _weather_, _bus_stops_, etc.) to verify top-level JSON types (object vs. array) and preview key structures before downstream Silver-layer parsing.
@@ -23,7 +23,7 @@ order by id desc
 limit 12;
 ```
 
-![Check 2](data_warehouse/images_sql/check_2.png)
+![Check 2](images_sql/check_2.png)
 
 ### 3. Silver Layer Row Count Audit
 Aggregates record counts across all six transformed Silver tables (_silver_stops_, _silver_routes_, _silver_trips_, _silver_stop_events_, _silver_live_positions_, and _silver_weather_) in a single view to verify post-transformation completeness and catch empty models or accidental join/unnest row explosions.
@@ -36,7 +36,7 @@ union all select 'silver_live_positions', count(*) from silver.silver_live_posit
 union all select 'silver_weather', count(*) from silver.silver_weather;
 ```
 
-![Check 3](data_warehouse/images_sql/check_3.png)
+![Check 3](images_sql/check_3.png)
 
 ### 4. SCD Type 2 Snapshot Audit (_history.snap_stops_)
 Compares total historical versions, distinct stop_id entities, and active records (_dbt_valid_to is null_) to verify that dbt snapshot tracking captures historical changes without creating duplicate active rows.
@@ -47,7 +47,7 @@ select count(*) as versions,
  from history.snap_stops;
 ```
 
-![Check 4](data_warehouse/images_sql/check_4.png)
+![Check 4](images_sql/check_4.png)
 
 ### 5. Date & Time Dimension Check
 Verifies row counts in _gold.dim_date_ and _gold.dim_time_ to confirm complete calendar and time-of-day coverage (e.g., 1,440 minutes/day) before joining Gold-layer fact tables.
@@ -57,7 +57,7 @@ select
 	(select count(*) from gold.dim_time) as time_count;
 ```
 
-![Check 5](data_warehouse/images_sql/check_5.png)
+![Check 5](images_sql/check_5.png)
 
 ### 6. Fact Table Integrity & Enrichment Audit (_gold.fact_bus_performance_)
 Evaluates total fact row volume alongside orphaned dimension foreign keys (_route_key_, _stop_key_) and enrichment match rates for nearby weather (_weather_key_) and live GPS speed telemetry (_avg_speed_kmh_).
@@ -70,7 +70,7 @@ select count(*) as n_rows,
 from gold.fact_bus_performance;
 ```
 
-![Check 6](data_warehouse/images_sql/check_6.png)
+![Check 6](images_sql/check_6.png)
 
 ### 7. Weather Fact Volume Check (_gold.fact_weather_)
 Confirms the total count of analytics-ready weather observations in the Gold layer to verify successful Silver-to-Gold loading and completeness.
@@ -78,7 +78,7 @@ Confirms the total count of analytics-ready weather observations in the Gold lay
 select count(*) as weather_observations from gold.fact_weather;
 ```
 
-![Check 7](data_warehouse/images_sql/check_7.png)
+![Check 7](images_sql/check_7.png)
 
 ### 8. On-Time Performance KPI Validation (_gold.fact_bus_performance_)
 Calculates the overall percentage of on-time bus events across active, non-canceled trips with valid punctuality flags (_on_time_flag is not null_) to validate Gold-layer business metric accuracy.
@@ -88,7 +88,7 @@ from gold.fact_bus_performance
 where on_time_flag is not null and is_canceled = false;
 ```
 
-![Check 8](data_warehouse/images_sql/check_8.png)
+![Check 8](images_sql/check_8.png)
 
 ### 9. Fact Table Grain & Uniqueness Test (_gold.fact_bus_performance_)
 Groups records by (_date_key_, _trip_key_, _stop_index_) and filters for _count(*) > 1_ to guarantee primary key uniqueness at the stop-event grain and detect duplicate loads or fan-out joins (expects 0 rows).
@@ -99,14 +99,14 @@ group by 1, 2, 3
 having count(*) > 1;
 ```
 
-![Check 9](data_warehouse/images_sql/check_9.png)
+![Check 9](images_sql/check_9.png)
 
 ## Business Question Outputs
 The Demo SQL Queries: [Demo_queries.sql](https://github.com/merettearula1/data-engineering-team-13/blob/main/datasets_architecture/modeling/Demo_queries.sql)
 ### Q1
 **On which bus lines is the average delay (in seconds) greatest during adverse weather conditions (weather phenomena) or heavy rainfall compared to clear weather?**
 
-![Q1 sub1](data_warehouse/images_sql/q1_1.png)
+![Q1 sub1](images_sql/q1_1.png)
 
 As there were not enough data collected yet, the output for _rain_ vs. _clear_ was empty.
 ```sql
@@ -124,7 +124,7 @@ HAVING COUNT(*) >= 30
 ORDER BY r.short_name, w.weather_category;
 ```
 
-![Q1 sub2](data_warehouse/images_sql/q1_2.png)
+![Q1 sub2](images_sql/q1_2.png)
 
 To check if the query works, we instead checked _rain_ vs. _other_:
 ```sql
@@ -166,46 +166,46 @@ WITH weather_phenomena_classified AS (
   ORDER BY adverse_delay_penalty_sec DESC NULLS LAST;
 ```
 
-![Q1 answer](data_warehouse/images_sql/q1_3.png)
+![Q1 answer](images_sql/q1_3.png)
 
 ### Q2
 **Which bus lines are most frequently delayed?**
 
-![Q2 answer1](data_warehouse/images_sql/q2_1.png)
+![Q2 answer1](images_sql/q2_1.png)
 
 **Between which stops are the delays greatest**
 
 Compared to the inital query, to display the results with such few datapoints, we changed the _HAVING COUNT(*)_ from 30 to 3. In the inital query, it is still 30.
 
-![Q2 answer2](data_warehouse/images_sql/q2_2.png)
+![Q2 answer2](images_sql/q2_2.png)
 
 
 ### Q3
 **At what times of day are delays greatest?**
 
-![Q3 answer1](data_warehouse/images_sql/q3_1.png)
+![Q3 answer1](images_sql/q3_1.png)
 
 
 **On which days are delays greatest?***
 
-![Q3 answer2](data_warehouse/images_sql/q3_2.png)
+![Q3 answer2](images_sql/q3_2.png)
 
 
 ### Q4
 **Which districts (or areas around stops) experience the greatest schedule deviations due to bad weather?**
 
-![Q4 answer](data_warehouse/images_sql/q4.png)
+![Q4 answer](images_sql/q4.png)
 
 
 ### Q5
 **To what extent do difficult road sections and weather conditions (e.g., snowfall or rain) slow down traffic in a specific city district?**
 
-![Q5 answer1](data_warehouse/images_sql/q5_1.png)
+![Q5 answer1](images_sql/q5_1.png)
 
 
 **Or between stops?**
 
 Again. Compared to the inital query, to display the results with such few datapoints, we changed the _HAVING COUNT(*)_ from 30 to 3. In the inital query, it is still 30.
 
-![Q5 answer2](data_warehouse/images_sql/q5_2.png)
+![Q5 answer2](images_sql/q5_2.png)
 
